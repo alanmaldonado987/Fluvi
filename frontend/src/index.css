@@ -1,0 +1,150 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/manrope";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  color-scheme: light;
+  --background: #f4f7f2;
+  --foreground: #1f1a17;
+  --card: #ffffff;
+  --card-foreground: #1f1a17;
+  --popover: #ffffff;
+  --popover-foreground: #1f1a17;
+  --primary: #1f1a17;
+  --primary-foreground: #ffffff;
+  --secondary: #dcefe3;
+  --secondary-foreground: #244d35;
+  --muted: #eaf0ec;
+  --muted-foreground: #5b6b60;
+  --accent: #eaf0ec;
+  --accent-foreground: #244d35;
+  --destructive: #c8322e;
+  --border: #dde6e0;
+  --input: #b5c6bb;
+  --ring: #2e7d55;
+  --chart-1: #2e7d55;
+  --chart-2: #e9b949;
+  --chart-3: #e2574c;
+  --chart-4: #4a90d9;
+  --chart-5: #7db891;
+  --radius: 1rem;
+  --forest: #244d35;
+  --leaf: #2e7d55;
+  --mint: #dcefe3;
+  --gold: #e9b949;
+  --positive: #1f6b45;
+  --positive-soft: #e3f3e9;
+  --negative: #c8322e;
+  --negative-soft: #fdecec;
+  --on-forest: #ffffff;
+}
+
+.dark {
+  color-scheme: dark;
+  --background: #111614;
+  --foreground: #e9efeb;
+  --card: #182019;
+  --card-foreground: #e9efeb;
+  --popover: #1c2620;
+  --popover-foreground: #e9efeb;
+  --primary: #e9efeb;
+  --primary-foreground: #14231b;
+  --secondary: #22362b;
+  --secondary-foreground: #c6e6d3;
+  --muted: #202b25;
+  --muted-foreground: #9db3a6;
+  --accent: #243329;
+  --accent-foreground: #c6e6d3;
+  --destructive: #f2928c;
+  --border: #2a3630;
+  --input: #3b4a41;
+  --ring: #6fc492;
+  --chart-1: #6fc492;
+  --chart-2: #e0b24a;
+  --chart-3: #f27c72;
+  --chart-4: #6ea8e8;
+  --chart-5: #3d6b4f;
+  --forest: #c6e6d3;
+  --leaf: #6fc492;
+  --mint: #1f3328;
+  --gold: #e0b24a;
+  --positive: #7fd3a1;
+  --positive-soft: #173626;
+  --negative: #f2928c;
+  --negative-soft: #3b201e;
+  --on-forest: #14231b;
+}
+
+@theme inline {
+  --font-sans: "Manrope Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-sans);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-forest: var(--forest);
+  --color-leaf: var(--leaf);
+  --color-mint: var(--mint);
+  --color-gold: var(--gold);
+  --color-positive: var(--positive);
+  --color-positive-soft: var(--positive-soft);
+  --color-negative: var(--negative);
+  --color-negative-soft: var(--negative-soft);
+  --color-on-forest: var(--on-forest);
+  --radius-sm: calc(var(--radius) - 8px);
+  --radius-md: calc(var(--radius) - 6px);
+  --radius-lg: calc(var(--radius) - 4px);
+  --radius-xl: var(--radius);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 16px);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply antialiased;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  h1, h2, h3 {
+    @apply font-heading font-bold tracking-tight text-forest;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@theme inline {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+}
