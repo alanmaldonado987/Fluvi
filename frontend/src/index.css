@@ -134,6 +134,18 @@
   h1, h2, h3 {
     @apply font-heading font-bold tracking-tight text-forest;
   }
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  [role="tab"],
+  [role="menuitem"],
+  [role="option"],
+  [role="radio"],
+  [role="combobox"],
+  label:has(> input[type="checkbox"]),
+  input[type="checkbox"],
+  input[type="file"] {
+    cursor: pointer;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
