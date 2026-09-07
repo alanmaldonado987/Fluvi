@@ -4,7 +4,7 @@ import { MoneyInput } from '@/components/MoneyInput'
 import { iconoBilletera } from '@/lib/iconos'
 import { cn } from '@/lib/utils'
 
-export function BilleteraCard({ billetera, saldo, anterior, onSaldo, acciones, className, style }) {
+export function BilleteraCard({ billetera, saldo, anterior, actividad, onSaldo, acciones, className, style }) {
   const delta = anterior == null ? null : saldo - anterior
   return (
     <li className={cn('rounded-2xl bg-card p-4 ring-1 ring-border', className)} style={style}>
@@ -28,6 +28,11 @@ export function BilleteraCard({ billetera, saldo, anterior, onSaldo, acciones, c
           </>
         )}
       </p>
+      {actividad.entradas || actividad.salidas ? (
+        <p className="mt-1 text-xs text-muted-foreground">
+          Este mes entraron <Money value={actividad.entradas} className="font-semibold text-positive" /> y salieron <Money value={actividad.salidas} className="font-semibold text-foreground" />
+        </p>
+      ) : null}
     </li>
   )
 }

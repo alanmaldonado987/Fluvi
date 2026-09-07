@@ -11,7 +11,7 @@ export function totales(movs) {
   let egresos = 0
   for (const m of movs) {
     if (m.tipo === 'Ingreso') ingresos += m.valor
-    else egresos += m.valor
+    else if (m.tipo === 'Egreso') egresos += m.valor
   }
   return { ingresos, egresos, neto: ingresos - egresos }
 }
@@ -26,10 +26,28 @@ export function describirCategoria(mapa, id) {
   return padre ? { etiqueta: `${padre.nombre} / ${c.nombre}`, icono: padre.nombre } : { etiqueta: c.nombre, icono: c.nombre }
 }
 
+export const nombreBilletera = (billeteras, id) => billeteras.find((b) => b.id === id)?.nombre ?? 'Sin billetera'
+
+export function describirMovimiento(mapa, billeteras, m) {
+  if (m.tipo !== 'Transferencia') return describirCategoria(mapa, m.categoriaId)
+  return { etiqueta: `${nombreBilletera(billeteras, m.billeteraId)} → ${nombreBilletera(billeteras, m.destinoId)}`, icono: 'transferencia' }
+}
+
+export function actividadBilletera(movs, id) {
+  let entradas = 0
+  let salidas = 0
+  for (const m of movs) {
+    if (m.destinoId === id || (m.tipo === 'Ingreso' && m.billeteraId === id)) entradas += m.valor
+    else if (m.billeteraId === id && m.tipo !== 'Ingreso') salidas += m.valor
+  }
+  return { entradas, salidas }
+}
+
 export function realPorCategoria(movs, categorias) {
   const padres = indicePadres(categorias)
   const real = new Map()
   for (const m of movs) {
+    if (!m.categoriaId) continue
     const id = padres.get(m.categoriaId) ?? m.categoriaId
     real.set(id, (real.get(id) || 0) + m.valor)
   }
@@ -173,9 +191,8 @@ export function recordatorios(state, preferencias) {
   return lista
 }
 
-export function distribucionEgresos(state, mes) {
-  const egresos = movimientosDe(state.movimientos, state.anio, mes).filter((m) => m.tipo === 'Egreso')
-  const real = realPorCategoria(egresos, state.categorias)
+export function distribucionEgresos(state, movs) {
+  const real = realPorCategoria(movs.filter((m) => m.tipo === 'Egreso'), state.categorias)
   return principales(state.categorias)
     .filter((c) => real.has(c.id))
     .map((c) => ({ nombre: c.nombre, valor: real.get(c.id) }))

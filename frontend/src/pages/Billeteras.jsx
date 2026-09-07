@@ -11,7 +11,7 @@ import { Panel } from '@/components/Panel'
 import { PeriodoPicker } from '@/components/PeriodPickers'
 import { StatCard } from '@/components/StatCard'
 import { Button } from '@/components/ui/button'
-import { clave, saldoBilleteras, serieBilleteras } from '@/lib/calc'
+import { actividadBilletera, clave, movimientosDe, saldoBilleteras, serieBilleteras } from '@/lib/calc'
 import { MESES } from '@/lib/format'
 import { useFormatoMoneda } from '@/lib/privado'
 import { entrada, escalonado } from '@/lib/motion'
@@ -26,6 +26,7 @@ export default function Billeteras() {
   const { mes, anio } = state
   const saldoDe = (id, m) => state.saldos[clave(anio, m, id)]
   const total = saldoBilleteras(state, mes)
+  const delMes = movimientosDe(state.movimientos, anio, mes)
   const diferencia = mes > 0 ? total - saldoBilleteras(state, mes - 1) : null
   const principal = state.billeteras.map((b) => ({ ...b, saldo: saldoDe(b.id, mes) || 0 })).sort((a, b) => b.saldo - a.saldo)[0]
 
@@ -50,6 +51,7 @@ export default function Billeteras() {
                   billetera={b}
                   saldo={saldoDe(b.id, mes) || 0}
                   anterior={mes > 0 ? (saldoDe(b.id, mes - 1) ?? null) : null}
+                  actividad={actividadBilletera(delMes, b.id)}
                   onSaldo={(valor) => actions.setSaldo(mes, b.id, valor)}
                   className={entrada}
                   style={escalonado(i)}
@@ -97,7 +99,7 @@ export default function Billeteras() {
         open={confirmando}
         onOpenChange={setConfirmando}
         title={`¿Eliminar "${porEliminar?.nombre}"?`}
-        description="Se borrarán todos sus saldos registrados."
+        description="Se borrarán sus saldos registrados. Los movimientos asociados quedan sin billetera."
         onConfirm={() => {
           actions.eliminar('billeteras', porEliminar.id)
           setConfirmando(false)

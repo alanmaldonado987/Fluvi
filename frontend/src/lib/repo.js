@@ -1,7 +1,7 @@
 import { clave } from './calc'
 import { resultado, supabase } from './supabase'
 
-const columnas = { padreId: 'padre_id', categoriaId: 'categoria_id', recurrenteId: 'recurrente_id', fechaInicio: 'fecha_inicio', fechaLimite: 'fecha_limite' }
+const columnas = { padreId: 'padre_id', categoriaId: 'categoria_id', recurrenteId: 'recurrente_id', billeteraId: 'billetera_id', destinoId: 'billetera_destino_id', fechaInicio: 'fecha_inicio', fechaLimite: 'fecha_limite' }
 
 const aFila = (obj) =>
   Object.fromEntries(
@@ -22,6 +22,8 @@ const aMovimiento = (r) => ({
   valor: Number(r.valor),
   observacion: r.observacion,
   ...(r.recurrente_id ? { recurrenteId: r.recurrente_id } : {}),
+  ...(r.billetera_id ? { billeteraId: r.billetera_id } : {}),
+  ...(r.billetera_destino_id ? { destinoId: r.billetera_destino_id } : {}),
 })
 const aRecurrente = (r) => ({ id: r.id, tipo: r.tipo, categoriaId: r.categoria_id, concepto: r.concepto, valor: Number(r.valor), dia: r.dia, activo: r.activo })
 const aMeta = (r) => ({ id: r.id, nombre: r.nombre, objetivo: Number(r.objetivo), categoriaId: r.categoria_id, fechaInicio: r.fecha_inicio, fechaLimite: r.fecha_limite })
@@ -73,5 +75,7 @@ export const guardarNota = (anio, mes, texto) => supabase.from('notas_mes').upse
 export const historialDe = (movimientoId) => supabase.from('movimientos_historial').select('*').eq('movimiento_id', movimientoId).order('creado_en').then(resultado)
 
 export const omitir = (anio, mes, recurrenteId) => supabase.from('recurrentes_omitidos').insert({ anio, mes: mes + 1, recurrente_id: recurrenteId }).then(resultado)
+
+export const borrarTodo = () => supabase.rpc('borrar_mis_datos').then(resultado)
 
 export const importarAnio = (anio, datos) => supabase.rpc('importar_anio', { p_anio: anio, p_datos: datos }).then(resultado)

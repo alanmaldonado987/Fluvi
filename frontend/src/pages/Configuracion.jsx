@@ -1,8 +1,10 @@
-import { Bell, Database, Download, LoaderCircle, LogOut, Monitor, Moon, Palette, Shield, Sun, User } from 'lucide-react'
+import { Bell, Database, Download, LoaderCircle, LogOut, Monitor, Moon, Palette, Shield, Sun, Trash2, User } from 'lucide-react'
 import { useState } from 'react'
 import { Navigate, NavLink, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
+import { BorrarDatosDialog } from '@/components/BorrarDatosDialog'
 import { Campo } from '@/components/Campo'
+import { CerrarSesionDialog } from '@/components/CerrarSesionDialog'
 import { FormularioInline } from '@/components/FormularioInline'
 import { PageHeader } from '@/components/PageHeader'
 import { Panel } from '@/components/Panel'
@@ -19,7 +21,7 @@ const secciones = [
   { id: 'seguridad', label: 'Seguridad', icon: Shield, detalle: 'Contraseña y sesiones abiertas.' },
   { id: 'notificaciones', label: 'Notificaciones', icon: Bell, detalle: 'Qué avisos quieres ver y cuándo.' },
   { id: 'apariencia', label: 'Apariencia', icon: Palette, detalle: 'Cómo se ve Fluvi en este dispositivo.' },
-  { id: 'datos', label: 'Datos', icon: Database, detalle: 'Copias de seguridad de tu información.' },
+  { id: 'datos', label: 'Datos', icon: Database, detalle: 'Copias de seguridad y borrado de tu información.' },
 ]
 
 const mensajesCuenta = {
@@ -74,7 +76,8 @@ function Perfil() {
 }
 
 function Seguridad() {
-  const { actualizar, salir } = useAuth()
+  const { actualizar } = useAuth()
+  const [cerrando, setCerrando] = useState(null)
   const [clave, setClave] = useState('')
   const [confirmacion, setConfirmacion] = useState('')
   const [enviando, setEnviando] = useState(false)
@@ -115,14 +118,15 @@ function Seguridad() {
       <Panel title="Sesiones">
         <p className="text-sm text-muted-foreground">Si entraste desde un computador ajeno o perdiste el celular, cierra todas las sesiones. Tendrás que volver a entrar en cada dispositivo.</p>
         <div className="mt-4 flex flex-wrap gap-2">
-          <Button variant="outline" onClick={() => salir()}>
+          <Button variant="outline" onClick={() => setCerrando(false)}>
             <LogOut /> Cerrar sesión aquí
           </Button>
-          <Button variant="outline" className="text-destructive" onClick={() => salir(true)}>
+          <Button variant="outline" className="text-destructive" onClick={() => setCerrando(true)}>
             <LogOut /> Cerrar sesión en todos los dispositivos
           </Button>
         </div>
       </Panel>
+      <CerrarSesionDialog open={cerrando !== null} todos={cerrando === true} onOpenChange={(abierto) => !abierto && setCerrando(null)} />
     </>
   )
 }
@@ -227,6 +231,7 @@ function Apariencia() {
 
 function Datos() {
   const { state } = useFinance()
+  const [borrando, setBorrando] = useState(false)
   const descargar = () => {
     const { categorias, billeteras, movimientos, presupuestos, saldos, recurrentes, metas } = state
     const contenido = JSON.stringify({ exportadoEn: hoy(), categorias, billeteras, movimientos, presupuestos, saldos, recurrentes, metas }, null, 2)
@@ -237,14 +242,25 @@ function Datos() {
   }
   const total = state.movimientos.length
   return (
-    <Panel title="Copia de seguridad">
-      <p className="text-sm text-muted-foreground">
-        Descarga todos tus datos en un archivo JSON: {state.categorias.length} categorías, {state.billeteras.length} billeteras y {total} {total === 1 ? 'movimiento' : 'movimientos'}. Guárdalo donde quieras; tus datos siempre son tuyos.
-      </p>
-      <Button variant="secondary" className="mt-4" onClick={descargar}>
-        <Download /> Descargar copia
-      </Button>
-    </Panel>
+    <>
+      <Panel title="Copia de seguridad">
+        <p className="text-sm text-muted-foreground">
+          Descarga todos tus datos en un archivo JSON: {state.categorias.length} categorías, {state.billeteras.length} billeteras y {total} {total === 1 ? 'movimiento' : 'movimientos'}. Guárdalo donde quieras; tus datos siempre son tuyos.
+        </p>
+        <Button variant="secondary" className="mt-4" onClick={descargar}>
+          <Download /> Descargar copia
+        </Button>
+      </Panel>
+      <Panel title="Borrar todos mis datos">
+        <p className="text-sm text-muted-foreground">
+          Deja la cuenta vacía, como recién creada: se borran categorías, billeteras, movimientos, presupuestos, metas, recurrentes y notas. Tu usuario y tu contraseña se conservan. Descarga una copia antes si quieres guardarlos.
+        </p>
+        <Button variant="outline" className="mt-4 text-destructive" onClick={() => setBorrando(true)}>
+          <Trash2 /> Borrar todos mis datos
+        </Button>
+      </Panel>
+      <BorrarDatosDialog open={borrando} onOpenChange={setBorrando} />
+    </>
   )
 }
 

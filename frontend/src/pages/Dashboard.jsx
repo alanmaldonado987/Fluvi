@@ -16,7 +16,7 @@ import { NotasMes } from '@/components/NotasMes'
 import { Recordatorios } from '@/components/Recordatorios'
 import { StatCard } from '@/components/StatCard'
 import { buttonVariants } from '@/components/ui/button'
-import { avance, clave, describirCategoria, distribucionEgresos, excedidas, flujoMes, movimientosDe, progresoMeta, saldoBilleteras, serieAnual, totales, totalesFilas } from '@/lib/calc'
+import { avance, clave, describirMovimiento, distribucionEgresos, nombreBilletera, excedidas, flujoMes, movimientosDe, progresoMeta, saldoBilleteras, serieAnual, totales, totalesFilas } from '@/lib/calc'
 import { anioDe, MESES } from '@/lib/format'
 import { useFormatoMoneda } from '@/lib/privado'
 import { iconoBilletera } from '@/lib/iconos'
@@ -79,7 +79,7 @@ export default function Dashboard() {
     .sort((a, b) => b.fecha.localeCompare(a.fecha) || b.consecutivo - a.consecutivo)
     .slice(0, 5)
   const mapa = new Map(state.categorias.map((c) => [c.id, c]))
-  const distribucion = distribucionEgresos(state, mes)
+  const distribucion = distribucionEgresos(state, movs)
   const billeteras = state.billeteras.map((b) => ({ ...b, saldo: state.saldos[clave(anio, mes, b.id)] || 0 }))
   const sinConfigurar = state.categorias.length === 0 && state.billeteras.length === 0
   const tasaAhorro = ingresos ? Math.round((neto / ingresos) * 100) : null
@@ -193,7 +193,16 @@ export default function Dashboard() {
               {recientes.length ? (
                 <ul className="divide-y">
                   {recientes.map((m, i) => (
-                    <MovimientoItem key={m.id} movimiento={m} categoria={describirCategoria(mapa, m.categoriaId).etiqueta} icono={describirCategoria(mapa, m.categoriaId).icono} onEditar={() => navigate('/movimientos')} className={entrada} style={escalonado(i)} />
+                    <MovimientoItem
+                      key={m.id}
+                      movimiento={m}
+                      categoria={describirMovimiento(mapa, state.billeteras, m).etiqueta}
+                      icono={describirMovimiento(mapa, state.billeteras, m).icono}
+                      billetera={m.tipo !== 'Transferencia' && m.billeteraId ? nombreBilletera(state.billeteras, m.billeteraId) : null}
+                      onEditar={() => navigate('/movimientos')}
+                      className={entrada}
+                      style={escalonado(i)}
+                    />
                   ))}
                 </ul>
               ) : (

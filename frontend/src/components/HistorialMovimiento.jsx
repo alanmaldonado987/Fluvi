@@ -1,13 +1,13 @@
 import { ChevronDown } from 'lucide-react'
 import { useState } from 'react'
-import { describirCategoria } from '@/lib/calc'
+import { describirCategoria, nombreBilletera } from '@/lib/calc'
 import { fechaCorta, fechaHora } from '@/lib/format'
 import { useFormatoMoneda } from '@/lib/privado'
 import { historialDe } from '@/lib/repo'
 import { cn } from '@/lib/utils'
 import { useFinance } from '@/store/context'
 
-const campos = { valor: 'Valor', fecha: 'Fecha', tipo: 'Tipo', categoria_id: 'Categoría', concepto: 'Concepto', observacion: 'Observación' }
+const campos = { valor: 'Valor', fecha: 'Fecha', tipo: 'Tipo', categoria_id: 'Categoría', billetera_id: 'Billetera', billetera_destino_id: 'Destino', concepto: 'Concepto', observacion: 'Observación' }
 const acciones = { creado: 'Creado', editado: 'Editado', eliminado: 'Eliminado' }
 
 export function HistorialMovimiento({ movimientoId }) {
@@ -25,6 +25,7 @@ export function HistorialMovimiento({ movimientoId }) {
     if (valor == null || valor === '') return 'vacío'
     if (campo === 'valor') return formatear(Number(valor))
     if (campo === 'categoria_id') return describirCategoria(mapa, valor).etiqueta
+    if (campo === 'billetera_id' || campo === 'billetera_destino_id') return nombreBilletera(state.billeteras, valor)
     if (campo === 'fecha') return fechaCorta(valor)
     return String(valor)
   }

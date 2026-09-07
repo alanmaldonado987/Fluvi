@@ -97,6 +97,7 @@ export function FinanceProvider({ children }) {
       },
       aplicarRecurrente: (recurrente, mes) => agregarItem('movimientos', movimientoDesdeRecurrente(recurrente, estadoRef.current.anio, mes)),
       omitir: (mes, id) => ejecutar({ type: 'omitir', mes, id }, () => repo.omitir(estadoRef.current.anio, mes, id)),
+      borrarTodo: () => repo.borrarTodo().then(recargar),
     }
   }, [])
 

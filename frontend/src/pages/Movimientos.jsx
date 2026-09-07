@@ -1,4 +1,4 @@
-import { ArrowLeftRight, FileSpreadsheet, Plus, Search } from 'lucide-react'
+import { ArrowLeftRight, FileSpreadsheet, Plus, Search, X } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -18,7 +18,7 @@ import { SelectField } from '@/components/SelectField'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { describirCategoria, distribucionEgresos, indicePadres, movimientosDe, principales, totales } from '@/lib/calc'
+import { describirMovimiento, distribucionEgresos, indicePadres, movimientosDe, nombreBilletera, principales, totales } from '@/lib/calc'
 import { anioDe, diasAtras, fechaLarga, hoy, MESES, mesDe } from '@/lib/format'
 import { useFormatoMoneda } from '@/lib/privado'
 import { entrada, escalonado } from '@/lib/motion'
@@ -29,16 +29,22 @@ const tipos = [
   ['todos', 'Todos'],
   ['Ingreso', 'Ingresos'],
   ['Egreso', 'Egresos'],
+  ['Transferencia', 'Transferencias'],
 ]
+const alcances = [
+  { value: 'mes', label: 'Solo este mes' },
+  { value: 'anio', label: 'Todo el año' },
+]
+const filtroInicial = { tipo: 'todos', categoriaId: 'todas', billeteraId: 'todas', texto: '', alcance: 'mes' }
 
 const etiquetaDia = (fecha) => (fecha === hoy() ? 'Hoy' : fecha === diasAtras(1) ? 'Ayer' : fechaLarga(fecha))
 
-function Resumen({ movs, distribucion }) {
+function Resumen({ titulo, movs, distribucion }) {
   const { ingresos, egresos, neto } = totales(movs)
   const mayor = distribucion[0]?.valor || 1
   return (
     <aside className="grid gap-5 lg:sticky lg:top-6 lg:self-start">
-      <Panel title="Resumen del mes">
+      <Panel title={titulo}>
         <dl className="grid gap-2 text-sm">
           <div className="flex justify-between gap-3">
             <dt className="text-muted-foreground">Ingresos</dt>
@@ -87,30 +93,39 @@ export default function Movimientos() {
   const { state, actions } = useFinance()
   const formatCOP = useFormatoMoneda()
   const { state: navegacion } = useLocation()
-  const [filtro, setFiltro] = useState({ tipo: 'todos', categoriaId: 'todas', texto: '' })
+  const [filtro, setFiltro] = useState(filtroInicial)
   const [editando, setEditando] = useState(null)
   const [formularioAbierto, setFormularioAbierto] = useState(() => Boolean(navegacion?.nuevo))
   const [porEliminar, setPorEliminar] = useState(null)
   const [confirmando, setConfirmando] = useState(false)
 
+  const cambiar = (cambios) => setFiltro((f) => ({ ...f, ...cambios }))
+  const limpiar = () => setFiltro({ ...filtroInicial, alcance: filtro.alcance })
   const mapa = new Map(state.categorias.map((c) => [c.id, c]))
   const padres = indicePadres(state.categorias)
+  const describir = (m) => describirMovimiento(mapa, state.billeteras, m)
+  const billeteraDe = (m) => (m.tipo !== 'Transferencia' && m.billeteraId ? nombreBilletera(state.billeteras, m.billeteraId) : null)
   const categorias = [
     { value: 'todas', label: 'Todas las categorías' },
     ...principales(state.categorias)
       .filter((c) => filtro.tipo === 'todos' || c.tipo === filtro.tipo)
       .flatMap((p) => [{ value: p.id, label: p.nombre }, ...state.categorias.filter((c) => c.padreId === p.id).map((h) => ({ value: h.id, label: `${p.nombre} / ${h.nombre}` }))]),
   ]
+  const billeteras = [{ value: 'todas', label: 'Todas las billeteras' }, ...state.billeteras.map((b) => ({ value: b.id, label: b.nombre }))]
   const texto = filtro.texto.trim().toLowerCase()
-  const delMes = movimientosDe(state.movimientos, state.anio, state.mes)
-  const lista = delMes
+  const anual = filtro.alcance === 'anio'
+  const base = anual ? state.movimientos.filter((m) => anioDe(m.fecha) === state.anio) : movimientosDe(state.movimientos, state.anio, state.mes)
+  const coincideTexto = (m) => !texto || [m.concepto, m.observacion, String(m.valor), describir(m).etiqueta, billeteraDe(m) ?? ''].some((t) => t.toLowerCase().includes(texto))
+  const lista = base
     .filter(
       (m) =>
         (filtro.tipo === 'todos' || m.tipo === filtro.tipo) &&
         (filtro.categoriaId === 'todas' || m.categoriaId === filtro.categoriaId || padres.get(m.categoriaId) === filtro.categoriaId) &&
-        (!texto || m.concepto.toLowerCase().includes(texto) || String(m.valor).includes(texto)),
+        (filtro.billeteraId === 'todas' || m.billeteraId === filtro.billeteraId || m.destinoId === filtro.billeteraId) &&
+        coincideTexto(m),
     )
     .sort((a, b) => b.fecha.localeCompare(a.fecha) || b.consecutivo - a.consecutivo)
+  const filtrado = filtro.tipo !== 'todos' || filtro.categoriaId !== 'todas' || filtro.billeteraId !== 'todas' || texto !== ''
   const grupos = []
   for (const m of lista) {
     const ultimo = grupos.at(-1)
@@ -129,7 +144,7 @@ export default function Movimientos() {
     else actions.agregar('movimientos', datos)
     const anio = anioDe(datos.fecha)
     const mes = mesDe(datos.fecha)
-    if (anio !== state.anio || mes !== state.mes) {
+    if (anio !== state.anio || (!anual && mes !== state.mes)) {
       actions.setPeriodo({ anio, mes })
       toast.info(`Guardado en ${MESES[mes].toLowerCase()} de ${anio}. Te llevamos a ese mes.`)
     }
@@ -142,7 +157,7 @@ export default function Movimientos() {
 
   return (
     <div className="grid gap-5">
-      <PageHeader title="Movimientos" description={`${MESES[state.mes]} ${state.anio}`}>
+      <PageHeader title="Movimientos" description={anual ? `Todo ${state.anio}` : `${MESES[state.mes]} ${state.anio}`}>
         <PeriodoPicker />
         <Link to="/importar" className={cn(buttonVariants({ variant: 'outline' }), 'hidden md:inline-flex')}>
           <FileSpreadsheet /> Importar Excel
@@ -153,7 +168,7 @@ export default function Movimientos() {
       </PageHeader>
 
       <div className="grid gap-2 md:flex md:flex-wrap md:items-center">
-        <Tabs value={filtro.tipo} onValueChange={(tipo) => setFiltro({ ...filtro, tipo, categoriaId: 'todas' })}>
+        <Tabs value={filtro.tipo} onValueChange={(tipo) => cambiar({ tipo, categoriaId: 'todas' })}>
           <TabsList className="w-full md:w-auto">
             {tipos.map(([valor, label]) => (
               <TabsTrigger key={valor} value={valor}>
@@ -162,69 +177,81 @@ export default function Movimientos() {
             ))}
           </TabsList>
         </Tabs>
-        <SelectField aria-label="Categoría" className="md:w-56" value={filtro.categoriaId} onChange={(categoriaId) => setFiltro({ ...filtro, categoriaId })} items={categorias} />
-        <div className="relative md:max-w-md md:min-w-64 md:flex-1">
+        {filtro.tipo === 'Transferencia' ? null : <SelectField aria-label="Categoría" className="md:w-52" value={filtro.categoriaId} onChange={(categoriaId) => cambiar({ categoriaId })} items={categorias} />}
+        {state.billeteras.length ? <SelectField aria-label="Billetera" className="md:w-44" value={filtro.billeteraId} onChange={(billeteraId) => cambiar({ billeteraId })} items={billeteras} /> : null}
+        <div className="relative md:min-w-56 md:flex-1">
           <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
-          <Input type="search" aria-label="Buscar" className="bg-card pl-9" placeholder="Buscar por concepto o valor" value={filtro.texto} onChange={(e) => setFiltro({ ...filtro, texto: e.target.value })} />
+          <Input type="search" aria-label="Buscar" className="bg-card pl-9" placeholder="Buscar por concepto, categoría o valor" value={filtro.texto} onChange={(e) => cambiar({ texto: e.target.value })} />
         </div>
+        <SelectField aria-label="Alcance" className="md:w-40" value={filtro.alcance} onChange={(alcance) => cambiar({ alcance })} items={alcances} />
+        {filtrado ? (
+          <Button variant="ghost" size="sm" onClick={limpiar}>
+            <X /> Limpiar
+          </Button>
+        ) : null}
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_18rem] 2xl:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="grid gap-5">
           <PendientesRecurrentes />
           {lista.length ? (
-          <Panel>
-            <div className={cn('hidden gap-4 border-b px-1 pb-2 text-xs font-semibold text-muted-foreground md:grid', columnasMovimiento)}>
-              <span>Movimiento</span>
-              <span>Categoría</span>
-              <span>Fecha</span>
-              <span className="text-right">Valor</span>
-              <span />
-            </div>
-            {grupos.map((g) => (
-              <section key={g.fecha} className="pt-4">
-                <div className="flex items-center justify-between gap-3 px-1">
-                  <h3 className="text-xs font-semibold text-muted-foreground">{etiquetaDia(g.fecha)}</h3>
-                  <Money value={totales(g.items).neto} signo className="text-xs font-semibold text-muted-foreground" />
-                </div>
-                <ul className="mt-1 divide-y">
-                  {g.items.map((m) => (
-                    <MovimientoItem
-                      key={m.id}
-                      tabla
-                      movimiento={m}
-                      categoria={describirCategoria(mapa, m.categoriaId).etiqueta}
-                      icono={describirCategoria(mapa, m.categoriaId).icono}
-                      mostrarFecha={false}
-                      onEditar={() => abrir(m)}
-                      onEliminar={() => pedirEliminar(m)}
-                      className={entrada}
-                      style={escalonado(indice++)}
-                    />
-                  ))}
-                </ul>
-              </section>
-            ))}
-          </Panel>
-        ) : (
-          <EmptyState
-            icon={ArrowLeftRight}
-            title={delMes.length ? 'Nada coincide con los filtros' : `Sin movimientos en ${MESES[state.mes].toLowerCase()}`}
-            description={hayCategorias ? 'Registra un ingreso o egreso para verlo aquí.' : 'Primero crea tus categorías en Presupuesto.'}
-          >
-            {hayCategorias ? (
-              <Button onClick={() => abrir(null)}>
-                <Plus /> Nuevo movimiento
-              </Button>
-            ) : (
-              <Link to="/presupuesto" className={buttonVariants()}>
-                Ir a Presupuesto
-              </Link>
-            )}
-          </EmptyState>
+            <Panel>
+              <div className={cn('hidden gap-4 border-b px-1 pb-2 text-xs font-semibold text-muted-foreground md:grid', columnasMovimiento)}>
+                <span>Movimiento</span>
+                <span>Categoría</span>
+                <span>Fecha</span>
+                <span className="text-right">Valor</span>
+                <span />
+              </div>
+              {grupos.map((g) => (
+                <section key={g.fecha} className="pt-4">
+                  <div className="flex items-center justify-between gap-3 px-1">
+                    <h3 className="text-xs font-semibold text-muted-foreground">{etiquetaDia(g.fecha)}</h3>
+                    <Money value={totales(g.items).neto} signo className="text-xs font-semibold text-muted-foreground" />
+                  </div>
+                  <ul className="mt-1 divide-y">
+                    {g.items.map((m) => (
+                      <MovimientoItem
+                        key={m.id}
+                        tabla
+                        movimiento={m}
+                        categoria={describir(m).etiqueta}
+                        icono={describir(m).icono}
+                        billetera={billeteraDe(m)}
+                        mostrarFecha={false}
+                        onEditar={() => abrir(m)}
+                        onEliminar={() => pedirEliminar(m)}
+                        className={entrada}
+                        style={escalonado(indice++)}
+                      />
+                    ))}
+                  </ul>
+                </section>
+              ))}
+            </Panel>
+          ) : (
+            <EmptyState
+              icon={ArrowLeftRight}
+              title={base.length ? 'Nada coincide con los filtros' : `Sin movimientos en ${anual ? state.anio : MESES[state.mes].toLowerCase()}`}
+              description={base.length ? 'Prueba con otra búsqueda o quita los filtros.' : hayCategorias ? 'Registra un ingreso, un egreso o una transferencia para verlo aquí.' : 'Primero crea tus categorías en Presupuesto.'}
+            >
+              {base.length ? (
+                <Button variant="outline" onClick={limpiar}>
+                  <X /> Limpiar filtros
+                </Button>
+              ) : hayCategorias ? (
+                <Button onClick={() => abrir(null)}>
+                  <Plus /> Nuevo movimiento
+                </Button>
+              ) : (
+                <Link to="/presupuesto" className={buttonVariants()}>
+                  Ir a Presupuesto
+                </Link>
+              )}
+            </EmptyState>
           )}
         </div>
-        <Resumen movs={delMes} distribucion={distribucionEgresos(state, state.mes)} />
+        <Resumen titulo={anual ? 'Resumen del año' : 'Resumen del mes'} movs={base} distribucion={distribucionEgresos(state, base)} />
       </div>
 
       {hayCategorias ? <BotonFlotante label="Nuevo movimiento" onClick={() => abrir(null)} /> : null}
@@ -242,7 +269,7 @@ export default function Movimientos() {
         open={confirmando}
         onOpenChange={setConfirmando}
         title="¿Eliminar este movimiento?"
-        description={porEliminar ? `${porEliminar.concepto || describirCategoria(mapa, porEliminar.categoriaId).etiqueta} por ${formatCOP(porEliminar.valor)}. Esta acción no se puede deshacer.` : ''}
+        description={porEliminar ? `${porEliminar.concepto || describir(porEliminar).etiqueta} por ${formatCOP(porEliminar.valor)}. Esta acción no se puede deshacer.` : ''}
         onConfirm={() => {
           actions.eliminar('movimientos', porEliminar.id)
           setConfirmando(false)
