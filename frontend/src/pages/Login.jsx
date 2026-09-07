@@ -1,19 +1,13 @@
-import { BellRing, ChartPie, Eye, EyeOff, LoaderCircle, Wallet } from 'lucide-react'
+import { Eye, EyeOff, LoaderCircle } from 'lucide-react'
 import { useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { Logo } from '@/components/Logo'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { entrada, escalonado } from '@/lib/motion'
+import { entrada } from '@/lib/motion'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/store/auth'
-
-const ventajas = [
-  { icon: ChartPie, texto: 'Presupuesto por categoría, mes a mes' },
-  { icon: BellRing, texto: 'Alertas cuando un gasto se pasa' },
-  { icon: Wallet, texto: 'Saldo real de cada billetera' },
-]
 
 const mensajes = {
   invalid_credentials: 'Correo o contraseña incorrectos.',
@@ -24,12 +18,13 @@ const mensajes = {
 }
 
 const textos = {
-  entrar: { titulo: 'Bienvenida de vuelta', detalle: 'Entra con tu correo para ver tu mes.', boton: 'Entrar', enviando: 'Entrando' },
-  registrar: { titulo: 'Crea tu cuenta', detalle: 'Solo necesitas un correo y una contraseña.', boton: 'Crear cuenta', enviando: 'Creando cuenta' },
+  entrar: { titulo: 'Bienvenida de vuelta', boton: 'Entrar', enviando: 'Entrando' },
+  registrar: { titulo: 'Crea tu cuenta', boton: 'Crear cuenta', enviando: 'Creando cuenta' },
   recuperar: { titulo: 'Recupera tu contraseña', detalle: 'Te enviamos un enlace para crear una nueva.', boton: 'Enviar enlace', enviando: 'Enviando' },
 }
 
 const enlace = 'font-semibold text-forest underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-ring'
+const retraso = (ms) => ({ animationDelay: `${ms}ms` })
 
 export default function Login() {
   const { usuario, entrar, registrar, recuperar } = useAuth()
@@ -56,10 +51,10 @@ export default function Login() {
     try {
       if (modo === 'registrar') {
         const { session } = await registrar(nombre.trim(), email.trim(), clave)
-        if (!session) setAviso({ tipo: 'ok', texto: 'Cuenta creada. Te enviamos un correo para confirmarla; después podrás entrar.' })
+        if (!session) setAviso({ tipo: 'ok', texto: 'Cuenta creada. Revisa tu correo para confirmarla.' })
       } else if (modo === 'recuperar') {
         await recuperar(email.trim())
-        setAviso({ tipo: 'ok', texto: 'Si el correo existe, recibirás un enlace para crear una contraseña nueva.' })
+        setAviso({ tipo: 'ok', texto: 'Si el correo existe, recibirás un enlace en un momento.' })
       } else {
         await entrar(email.trim(), clave)
       }
@@ -72,30 +67,21 @@ export default function Login() {
 
   return (
     <main className="grid min-h-svh lg:grid-cols-[1.1fr_1fr]">
-      <section className="relative hidden overflow-hidden bg-mint p-12 lg:flex lg:flex-col lg:justify-between">
-        <span aria-hidden="true" className="absolute -top-24 -right-24 size-80 rounded-full bg-gold/40" />
-        <span aria-hidden="true" className="absolute -bottom-40 -left-24 size-96 rounded-full bg-leaf/15" />
-        <Logo className="relative" />
-        <div className="relative max-w-md">
-          <p className="font-heading text-5xl leading-[1.05] font-bold tracking-tight text-forest">Tus finanzas, en flujo.</p>
-          <p className="mt-4 text-lg text-forest/80">Registra lo que entra y lo que sale, compáralo con tu presupuesto y mira tu saldo real cada mes. Sin fórmulas que se rompan.</p>
-          <ul className="mt-8 grid gap-3">
-            {ventajas.map(({ icon: Icon, texto }, i) => (
-              <li key={texto} className={cn('flex items-center gap-3 rounded-2xl bg-card px-4 py-3 font-semibold text-forest shadow-[0_8px_24px_-12px_rgba(36,77,53,0.35)]', entrada)} style={escalonado(i + 1)}>
-                <Icon className="size-5 text-leaf" aria-hidden="true" />
-                {texto}
-              </li>
-            ))}
-          </ul>
+      <section className="relative hidden overflow-hidden bg-forest p-12 text-white lg:flex lg:flex-col">
+        <img src="/login.jpg" alt="" fetchPriority="high" className="absolute inset-0 size-full object-cover object-[20%_center] motion-safe:animate-acercar" />
+        <span aria-hidden="true" className="absolute inset-0 bg-linear-to-t from-forest via-forest/35 to-forest/10" />
+        <Logo className="relative text-white" />
+        <div className={cn('relative mt-auto max-w-md', entrada)} style={retraso(100)}>
+          <p className="font-heading text-5xl leading-[1.05] font-bold tracking-tight text-balance">Tus finanzas, en flujo.</p>
+          <p className="mt-4 text-lg text-white/80">Registra, planea y mira crecer tu ahorro.</p>
         </div>
-        <p className="relative text-sm text-forest/70">Reemplaza tu Excel, no tu forma de pensar.</p>
       </section>
 
       <section className="flex items-center justify-center p-6">
-        <form onSubmit={enviar} className={cn('w-full max-w-sm', entrada)}>
+        <form onSubmit={enviar} className={cn('w-full max-w-sm', entrada)} style={retraso(150)}>
           <Logo className="mb-8 lg:hidden" />
           <h1 className="text-2xl">{t.titulo}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">{t.detalle}</p>
+          {t.detalle ? <p className="mt-1 text-sm text-muted-foreground">{t.detalle}</p> : null}
           <div className="mt-8 grid gap-4">
             {modo === 'registrar' ? (
               <div className="grid gap-1.5">
@@ -132,7 +118,7 @@ export default function Login() {
               </div>
             )}
             {aviso ? (
-              <p role="alert" className={cn('rounded-xl px-3 py-2 text-sm', aviso.tipo === 'error' ? 'bg-negative-soft text-negative' : 'bg-positive-soft text-positive')}>
+              <p role="alert" className={cn('rounded-xl px-3 py-2 text-sm', entrada, aviso.tipo === 'error' ? 'bg-negative-soft text-negative' : 'bg-positive-soft text-positive')}>
                 {aviso.texto}
               </p>
             ) : null}
