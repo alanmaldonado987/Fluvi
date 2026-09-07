@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils'
+import { cn } from '@/lib/utils' // libs
 
 export function Marca({ className }) {
   return (
