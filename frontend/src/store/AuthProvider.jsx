@@ -15,6 +15,7 @@ const aUsuario = (sesion) =>
         nombre: sesion.user.user_metadata?.nombre || nombreDe(sesion.user.email),
         preferencias: { ...PREFERENCIAS, ...(sesion.user.user_metadata?.preferencias ?? {}) },
         correoConfirmado: Boolean(sesion.user.email_confirmed_at),
+        tutorialVisto: Boolean(sesion.user.user_metadata?.tutorialVisto),
         ultimoAcceso: sesion.user.last_sign_in_at ?? null,
         creadoEn: sesion.user.created_at ?? null,
       }

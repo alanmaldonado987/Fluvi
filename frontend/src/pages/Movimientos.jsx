@@ -159,7 +159,7 @@ export default function Movimientos() {
     <div className="grid gap-5">
       <PageHeader title="Movimientos" description={anual ? `Todo ${state.anio}` : `${MESES[state.mes]} ${state.anio}`}>
         <PeriodoPicker />
-        <Link to="/importar" className={cn(buttonVariants({ variant: 'outline' }), 'hidden md:inline-flex')}>
+        <Link to="/importar" data-tour="importar" className={cn(buttonVariants({ variant: 'outline' }), 'hidden md:inline-flex')}>
           <FileSpreadsheet /> Importar Excel
         </Link>
         <Button className="hidden md:inline-flex" onClick={() => abrir(null)} disabled={!hayCategorias}>

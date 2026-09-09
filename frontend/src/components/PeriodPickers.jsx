@@ -19,7 +19,7 @@ export function YearPicker({ className }) {
 
 export function PeriodoPicker({ className }) {
   return (
-    <div className={cn('flex', className)} role="group" aria-label="Periodo">
+    <div className={cn('flex', className)} role="group" aria-label="Periodo" data-tour="periodo">
       <MonthPicker className="w-36 rounded-r-none" />
       <YearPicker className="-ml-px w-24 rounded-l-none" />
     </div>

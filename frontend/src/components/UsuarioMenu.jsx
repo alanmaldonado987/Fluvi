@@ -1,4 +1,4 @@
-import { LogOut, Settings } from 'lucide-react'
+import { CircleHelp, LogOut, Settings } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CerrarSesionDialog } from '@/components/CerrarSesionDialog'
@@ -14,7 +14,7 @@ const iniciales = (nombre) =>
     .join('')
     .toUpperCase()
 
-export function UsuarioMenu({ compacto = false, side = compacto ? 'bottom' : 'top' }) {
+export function UsuarioMenu({ compacto = false, side = compacto ? 'bottom' : 'top', onTutorial }) {
   const { usuario } = useAuth()
   const navigate = useNavigate()
   const [confirmando, setConfirmando] = useState(false)
@@ -22,6 +22,7 @@ export function UsuarioMenu({ compacto = false, side = compacto ? 'bottom' : 'to
     <>
       <DropdownMenu>
         <DropdownMenuTrigger
+          data-tour="usuario"
           aria-label={compacto ? 'Cuenta' : undefined}
           className={cn(
             'flex items-center gap-3 rounded-full text-left transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
@@ -39,6 +40,9 @@ export function UsuarioMenu({ compacto = false, side = compacto ? 'bottom' : 'to
         <DropdownMenuContent align={side === 'bottom' ? 'end' : 'start'} side={side} className="w-52">
           <DropdownMenuItem onClick={() => navigate('/configuracion')}>
             <Settings /> Configuración
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={onTutorial}>
+            <CircleHelp /> Ver el tutorial
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem variant="destructive" onClick={() => setConfirmando(true)}>

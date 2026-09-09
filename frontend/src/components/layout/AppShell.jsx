@@ -2,18 +2,20 @@ import { ArrowLeftRight, ChartPie, Eye, EyeOff, House, PanelLeftClose, PanelLeft
 import { useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { Logo } from '@/components/Logo'
+import { Tutorial } from '@/components/Tutorial'
 import { Button } from '@/components/ui/button'
 import { UsuarioMenu } from '@/components/UsuarioMenu'
 import { entradaPagina } from '@/lib/motion'
 import { alternarPrivado, usePrivado } from '@/lib/privado'
 import { cn } from '@/lib/utils'
+import { useAuth } from '@/store/auth'
 
 const rutas = [
-  { to: '/', label: 'Inicio', icon: House },
-  { to: '/movimientos', label: 'Movimientos', icon: ArrowLeftRight },
-  { to: '/presupuesto', label: 'Presupuesto', icon: ChartPie },
-  { to: '/billeteras', label: 'Billeteras', icon: Wallet },
-  { to: '/flujo', label: 'Flujo', icon: Waves },
+  { to: '/', label: 'Inicio', icon: House, tour: 'inicio' },
+  { to: '/movimientos', label: 'Movimientos', icon: ArrowLeftRight, tour: 'movimientos' },
+  { to: '/presupuesto', label: 'Presupuesto', icon: ChartPie, tour: 'presupuesto' },
+  { to: '/billeteras', label: 'Billeteras', icon: Wallet, tour: 'billeteras' },
+  { to: '/flujo', label: 'Flujo', icon: Waves, tour: 'flujo' },
 ]
 
 const CLAVE = 'fluvi:sidebar'
@@ -29,10 +31,17 @@ const leerColapsado = () => {
 
 export function AppShell() {
   const { pathname } = useLocation()
+  const { usuario, actualizar } = useAuth()
   const [colapsado, setColapsado] = useState(leerColapsado)
+  const [tutorial, setTutorial] = useState(() => !usuario.tutorialVisto)
   const privado = usePrivado()
+
+  const cerrarTutorial = () => {
+    setTutorial(false)
+    if (!usuario.tutorialVisto) actualizar({ data: { tutorialVisto: true } }).catch(() => {})
+  }
   const botonPrivado = (
-    <Button variant="ghost" size="icon" className="size-9 text-muted-foreground" aria-label={privado ? 'Mostrar cifras' : 'Ocultar cifras'} aria-pressed={privado} onClick={alternarPrivado}>
+    <Button data-tour="privado" variant="ghost" size="icon" className="size-9 text-muted-foreground" aria-label={privado ? 'Mostrar cifras' : 'Ocultar cifras'} aria-pressed={privado} onClick={alternarPrivado}>
       {privado ? <EyeOff /> : <Eye />}
     </Button>
   )
@@ -60,11 +69,12 @@ export function AppShell() {
           </span>
         </div>
         <nav aria-label="Principal" className="grid gap-1">
-          {rutas.map(({ to, label, icon: Icon }) => (
+          {rutas.map(({ to, label, icon: Icon, tour }) => (
             <NavLink
               key={to}
               to={to}
               end={to === '/'}
+              data-tour={tour}
               title={colapsado ? label : undefined}
               className={({ isActive }) =>
                 cn(
@@ -81,7 +91,7 @@ export function AppShell() {
           ))}
         </nav>
         <div className={cn('mt-auto w-full border-t pt-3', colapsado && 'flex justify-center')}>
-          <UsuarioMenu compacto={colapsado} side={colapsado ? 'right' : 'top'} />
+          <UsuarioMenu compacto={colapsado} side={colapsado ? 'right' : 'top'} onTutorial={() => setTutorial(true)} />
         </div>
       </aside>
 
@@ -89,7 +99,7 @@ export function AppShell() {
         <Logo />
         <span className="flex items-center gap-1">
           {botonPrivado}
-          <UsuarioMenu compacto />
+          <UsuarioMenu compacto onTutorial={() => setTutorial(true)} />
         </span>
       </header>
 
@@ -101,11 +111,12 @@ export function AppShell() {
 
       <nav aria-label="Principal" className="fixed inset-x-0 bottom-0 z-20 border-t bg-card/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden">
         <ul className="grid grid-cols-5">
-          {rutas.map(({ to, label, icon: Icon }) => (
+          {rutas.map(({ to, label, icon: Icon, tour }) => (
             <li key={to}>
               <NavLink
                 to={to}
                 end={to === '/'}
+                data-tour={tour}
                 className={({ isActive }) =>
                   cn('flex flex-col items-center gap-1 py-2 text-[11px] font-semibold', foco, isActive ? 'text-forest' : 'text-muted-foreground')
                 }
@@ -123,6 +134,7 @@ export function AppShell() {
           ))}
         </ul>
       </nav>
+      {tutorial ? <Tutorial onCerrar={cerrarTutorial} /> : null}
     </div>
   )
 }
