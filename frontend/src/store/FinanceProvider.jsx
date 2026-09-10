@@ -53,6 +53,10 @@ export function FinanceProvider({ children }) {
     const nuevoItem = (lista, datos) => {
       const item = { ...datos, id: crypto.randomUUID() }
       if (lista === 'movimientos') item.consecutivo = estadoRef.current.movimientos.reduce((n, m) => Math.max(n, m.consecutivo), 0) + 1
+      if (lista === 'categorias' && !datos.padreId) {
+        const hermanas = estadoRef.current.categorias.filter((c) => c.tipo === datos.tipo && !c.padreId)
+        item.orden = hermanas.length ? Math.max(...hermanas.map((c) => c.orden ?? 0)) + 1 : 0
+      }
       return item
     }
     const agregarItem = (lista, datos) => {
@@ -97,6 +101,7 @@ export function FinanceProvider({ children }) {
       },
       aplicarRecurrente: (recurrente, mes) => agregarItem('movimientos', movimientoDesdeRecurrente(recurrente, estadoRef.current.anio, mes)),
       omitir: (mes, id) => ejecutar({ type: 'omitir', mes, id }, () => repo.omitir(estadoRef.current.anio, mes, id)),
+      reordenar: (actualizaciones) => ejecutar({ type: 'reordenar', actualizaciones }, () => repo.reordenarCategorias(actualizaciones)),
       borrarTodo: () => repo.borrarTodo().then(recargar),
     }
   }, [])

@@ -10,7 +10,7 @@ const aFila = (obj) =>
       .map(([campo, valor]) => [columnas[campo] ?? campo, valor ?? null]),
   )
 
-const aCategoria = (r) => ({ id: r.id, nombre: r.nombre, tipo: r.tipo, ...(r.padre_id ? { padreId: r.padre_id } : {}) })
+const aCategoria = (r) => ({ id: r.id, nombre: r.nombre, tipo: r.tipo, orden: r.orden ?? 0, ...(r.padre_id ? { padreId: r.padre_id } : {}) })
 const aBilletera = (r) => ({ id: r.id, nombre: r.nombre })
 const aMovimiento = (r) => ({
   id: r.id,
@@ -35,7 +35,7 @@ const consultar = (tabla, orden) => {
 
 export async function cargarTodo() {
   const [categorias, billeteras, movimientos, presupuestos, saldos, recurrentes, omitidos, metas, notas] = await Promise.all([
-    consultar('categorias', 'creado_en'),
+    consultar('categorias', 'orden'),
     consultar('billeteras', 'creado_en'),
     consultar('movimientos', 'fecha'),
     consultar('presupuestos'),
@@ -75,6 +75,8 @@ export const guardarNota = (anio, mes, texto) => supabase.from('notas_mes').upse
 export const historialDe = (movimientoId) => supabase.from('movimientos_historial').select('*').eq('movimiento_id', movimientoId).order('creado_en').then(resultado)
 
 export const omitir = (anio, mes, recurrenteId) => supabase.from('recurrentes_omitidos').insert({ anio, mes: mes + 1, recurrente_id: recurrenteId }).then(resultado)
+
+export const reordenarCategorias = (items) => Promise.all(items.map(({ id, orden }) => supabase.from('categorias').update({ orden }).eq('id', id).then(resultado)))
 
 export const borrarTodo = () => supabase.rpc('borrar_mis_datos').then(resultado)
 

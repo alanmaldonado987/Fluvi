@@ -9,7 +9,8 @@ import { Panel } from '@/components/Panel'
 import { PeriodoPicker } from '@/components/PeriodPickers'
 import { StatCard } from '@/components/StatCard'
 import { buttonVariants } from '@/components/ui/button'
-import { flujoMes, serieSaldos, totalesFilas } from '@/lib/calc'
+import { flujoAnio, flujoMes, serieSaldos, totalesFilas } from '@/lib/calc'
+import { MESES } from '@/lib/format'
 import { entrada, escalonado } from '@/lib/motion'
 import { cn } from '@/lib/utils'
 import { useFinance } from '@/store/context'
@@ -37,14 +38,16 @@ function Seccion({ titulo, filas, totales, columnas = false }) {
 
 export default function FlujoCaja() {
   const { state } = useFinance()
-  const { ingresos, egresos, saldoInicial } = flujoMes(state, state.mes)
+  const anual = state.mes === null
+  const { ingresos, egresos, saldoInicial } = anual ? flujoAnio(state) : flujoMes(state, state.mes)
   const ti = totalesFilas(ingresos)
   const te = totalesFilas(egresos)
   const saldoFinal = saldoInicial + ti.real - te.real
+  const descripcion = anual ? `Todo ${state.anio}` : `Cómo se mueve tu dinero durante el mes.`
 
   return (
     <div className="grid gap-5">
-      <PageHeader title="Flujo de caja" description="Cómo se mueve tu dinero durante el mes.">
+      <PageHeader title="Flujo de caja" description={descripcion}>
         <PeriodoPicker />
       </PageHeader>
       {state.categorias.length === 0 ? (
@@ -58,9 +61,9 @@ export default function FlujoCaja() {
           <div className="grid items-center gap-2 sm:grid-cols-[1fr_auto_1fr_auto_1fr_auto_1fr]">
             <StatCard label="Saldo inicial" value={saldoInicial} className={entrada} style={escalonado(0)} />
             <Flecha />
-            <StatCard label="Ingresos del mes" value={ti.real} tone="positive" className={entrada} style={escalonado(1)} />
+            <StatCard label={anual ? 'Ingresos del año' : 'Ingresos del mes'} value={ti.real} tone="positive" className={entrada} style={escalonado(1)} />
             <Flecha />
-            <StatCard label="Egresos del mes" value={te.real} className={entrada} style={escalonado(2)} />
+            <StatCard label={anual ? 'Egresos del año' : 'Egresos del mes'} value={te.real} className={entrada} style={escalonado(2)} />
             <Flecha />
             <StatCard label="Saldo final" value={saldoFinal} destacado className={entrada} style={escalonado(3)} />
           </div>

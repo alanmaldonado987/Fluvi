@@ -20,6 +20,10 @@ const iso = (d) => `${d.getFullYear()}-${dosDigitos(d.getMonth() + 1)}-${dosDigi
 
 function fechaDe(valor, mesNombre) {
   if (valor instanceof Date) return Number.isNaN(valor.getTime()) ? null : iso(valor)
+  if (typeof valor === 'number') {
+    const d = new Date(Math.round((valor - 25569) * 86400000))
+    return `${d.getUTCFullYear()}-${dosDigitos(d.getUTCMonth() + 1)}-${dosDigitos(d.getUTCDate())}`
+  }
   const partes = String(valor ?? '').match(/(\d{1,4})[/-](\d{1,2})[/-](\d{1,4})/)
   if (!partes) return null
   const [a, b, c] = partes.slice(1).map(Number)

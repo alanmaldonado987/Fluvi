@@ -113,7 +113,7 @@ export default function Movimientos() {
   ]
   const billeteras = [{ value: 'todas', label: 'Todas las billeteras' }, ...state.billeteras.map((b) => ({ value: b.id, label: b.nombre }))]
   const texto = filtro.texto.trim().toLowerCase()
-  const anual = filtro.alcance === 'anio'
+  const anual = state.mes === null || filtro.alcance === 'anio'
   const base = anual ? state.movimientos.filter((m) => anioDe(m.fecha) === state.anio) : movimientosDe(state.movimientos, state.anio, state.mes)
   const coincideTexto = (m) => !texto || [m.concepto, m.observacion, String(m.valor), describir(m).etiqueta, billeteraDe(m) ?? ''].some((t) => t.toLowerCase().includes(texto))
   const lista = base
@@ -144,7 +144,7 @@ export default function Movimientos() {
     else actions.agregar('movimientos', datos)
     const anio = anioDe(datos.fecha)
     const mes = mesDe(datos.fecha)
-    if (anio !== state.anio || (!anual && mes !== state.mes)) {
+    if (anio !== state.anio || (!anual && state.mes !== null && mes !== state.mes)) {
       actions.setPeriodo({ anio, mes })
       toast.info(`Guardado en ${MESES[mes].toLowerCase()} de ${anio}. Te llevamos a ese mes.`)
     }
@@ -157,7 +157,7 @@ export default function Movimientos() {
 
   return (
     <div className="grid gap-5">
-      <PageHeader title="Movimientos" description={anual ? `Todo ${state.anio}` : `${MESES[state.mes]} ${state.anio}`}>
+      <PageHeader title="Movimientos" description={anual ? `Todo ${state.anio}` : `${MESES[state.mes]} ${state.anio}`} >
         <PeriodoPicker />
         <Link to="/importar" data-tour="importar" className={cn(buttonVariants({ variant: 'outline' }), 'hidden md:inline-flex')}>
           <FileSpreadsheet /> Importar Excel
@@ -183,7 +183,7 @@ export default function Movimientos() {
           <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
           <Input type="search" aria-label="Buscar" className="bg-card pl-9" placeholder="Buscar por concepto, categoría o valor" value={filtro.texto} onChange={(e) => cambiar({ texto: e.target.value })} />
         </div>
-        <SelectField aria-label="Alcance" className="md:w-40" value={filtro.alcance} onChange={(alcance) => cambiar({ alcance })} items={alcances} />
+        {state.mes !== null ? <SelectField aria-label="Alcance" className="md:w-40" value={filtro.alcance} onChange={(alcance) => cambiar({ alcance })} items={alcances} /> : null}
         {filtrado ? (
           <Button variant="ghost" size="sm" onClick={limpiar}>
             <X /> Limpiar
@@ -228,6 +228,10 @@ export default function Movimientos() {
                   </ul>
                 </section>
               ))}
+              <div className="flex items-center justify-between border-t px-1 pt-3">
+                <span className="text-sm font-semibold text-muted-foreground">Total ({lista.length} movimiento{lista.length !== 1 ? 's' : ''})</span>
+                <Money value={totales(lista).neto} signo className="text-sm font-bold" />
+              </div>
             </Panel>
           ) : (
             <EmptyState

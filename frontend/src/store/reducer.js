@@ -50,6 +50,10 @@ export function reducer(state, action) {
       return { ...state, notas: { ...state.notas, [`${state.anio}-${action.mes}`]: action.texto } }
     case 'saldo':
       return { ...state, saldos: { ...state.saldos, [clave(state.anio, action.mes, action.id)]: action.valor } }
+    case 'reordenar': {
+      const map = new Map(action.actualizaciones.map((u) => [u.id, u.orden]))
+      return { ...state, categorias: state.categorias.map((c) => (map.has(c.id) ? { ...c, orden: map.get(c.id) } : c)).sort((a, b) => a.orden - b.orden) }
+    }
     default:
       return state
   }

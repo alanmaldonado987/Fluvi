@@ -65,6 +65,23 @@ export function desglose(state, mes, padreId) {
 export const saldoBilleteras = ({ saldos, billeteras, anio }, mes) =>
   billeteras.reduce((t, b) => t + (saldos[clave(anio, mes, b.id)] || 0), 0)
 
+export function saldoVivoBilleteras(state, mes) {
+  const { billeteras, saldos, movimientos, anio } = state
+  const movsDel = movimientosDe(movimientos, anio, mes)
+  return billeteras.reduce((total, b) => {
+    const base = saldos[clave(anio, mes, b.id)] || 0
+    const { entradas, salidas } = actividadBilletera(movsDel, b.id)
+    return total + base + entradas - salidas
+  }, 0)
+}
+
+export function saldoVivoBilletera(state, mes, billeteraId) {
+  const base = state.saldos[clave(state.anio, mes, billeteraId)] || 0
+  const movsDel = movimientosDe(state.movimientos, state.anio, mes)
+  const { entradas, salidas } = actividadBilletera(movsDel, billeteraId)
+  return base + entradas - salidas
+}
+
 export function saldoInicial(state, mes) {
   let saldo = saldoBilleteras(state, 0)
   for (let m = 0; m < mes; m++) saldo += totales(movimientosDe(state.movimientos, state.anio, m)).neto
@@ -83,6 +100,23 @@ export function flujoMes(state, mes) {
     ingresos: filas.filter((f) => f.tipo === 'Ingreso'),
     egresos: filas.filter((f) => f.tipo === 'Egreso'),
     saldoInicial: saldoInicial(state, mes),
+  }
+}
+
+export function flujoAnio(state) {
+  const { categorias, presupuestos, movimientos, anio } = state
+  const movsAnio = movimientos.filter((m) => anioDe(m.fecha) === anio)
+  const real = realPorCategoria(movsAnio, categorias)
+  const filas = principales(categorias).map((c) => {
+    let proyectado = 0
+    for (let m = 0; m < 12; m++) proyectado += presupuestos[clave(anio, m, c.id)] || 0
+    const r = real.get(c.id) || 0
+    return { ...c, proyectado, real: r, diferencia: proyectado - r }
+  })
+  return {
+    ingresos: filas.filter((f) => f.tipo === 'Ingreso'),
+    egresos: filas.filter((f) => f.tipo === 'Egreso'),
+    saldoInicial: saldoInicial(state, 0),
   }
 }
 

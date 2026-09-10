@@ -5,6 +5,7 @@ import { useFinance } from '@/store/context'
 
 export function NotasMes() {
   const { state, actions } = useFinance()
+  if (state.mes === null) return null
   const texto = state.notas[`${state.anio}-${state.mes}`] ?? ''
   return (
     <Panel title={`Notas de ${MESES[state.mes].toLowerCase()}`} action={<p className="text-xs text-muted-foreground">Se guardan solas</p>}>

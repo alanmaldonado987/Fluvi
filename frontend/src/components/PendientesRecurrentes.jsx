@@ -10,6 +10,7 @@ import { useFinance } from '@/store/context'
 
 export function PendientesRecurrentes({ className }) {
   const { state, actions } = useFinance()
+  if (state.mes === null) return null
   const lista = pendientes(state, state.mes)
   if (!lista.length) return null
   const mapa = new Map(state.categorias.map((c) => [c.id, c]))

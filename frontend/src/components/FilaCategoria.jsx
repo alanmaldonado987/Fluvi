@@ -1,3 +1,4 @@
+import { GripVertical } from 'lucide-react'
 import { CategoriaIcono } from '@/components/CategoriaIcono'
 import { Money } from '@/components/Money'
 import { MoneyInput } from '@/components/MoneyInput'
@@ -6,7 +7,7 @@ import { avance } from '@/lib/calc'
 import { useFormatoMoneda } from '@/lib/privado'
 import { cn } from '@/lib/utils'
 
-export function FilaCategoria({ categoria, proyectado, real, onProyectado, acciones, className, style, children }) {
+export function FilaCategoria({ ref, categoria, proyectado, real, onProyectado, acciones, dragHandleProps, className, style, children }) {
   const formatCOP = useFormatoMoneda()
   const egreso = categoria.tipo === 'Egreso'
   const excede = egreso && real > proyectado
@@ -16,7 +17,12 @@ export function FilaCategoria({ categoria, proyectado, real, onProyectado, accio
     !proyectado && !real ? 'Sin proyección' : egreso ? (excede ? `Excedido por ${formatCOP(-restante)}` : `Quedan ${formatCOP(restante)}`) : real >= proyectado ? 'Recibido' : `Faltan ${formatCOP(restante)}`
 
   return (
-    <li className={cn('flex items-center gap-3 py-3', className)} style={style}>
+    <li ref={ref} className={cn('flex items-center gap-3 py-3', className)} style={style}>
+      {dragHandleProps ? (
+        <button type="button" {...dragHandleProps} className="shrink-0 cursor-grab touch-none text-muted-foreground/60 hover:text-muted-foreground active:cursor-grabbing" aria-label="Reordenar">
+          <GripVertical className="size-5" />
+        </button>
+      ) : null}
       <CategoriaIcono nombre={categoria.nombre} tipo={categoria.tipo} />
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-3">

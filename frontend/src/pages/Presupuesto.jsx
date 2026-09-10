@@ -1,5 +1,8 @@
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, rectSortingStrategy, useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { CalendarRange, ChartPie, ChevronDown, ListTree, MoreHorizontal, Pencil, PiggyBank, Plus, Trash2 } from 'lucide-react'
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { BarrasComparativas } from '@/components/charts/BarrasComparativas'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
@@ -18,7 +21,7 @@ import { StatCard } from '@/components/StatCard'
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { avance, describirCategoria, desglose, flujoMes, progresoMeta, totalesFilas } from '@/lib/calc'
+import { avance, describirCategoria, desglose, flujoAnio, flujoMes, progresoMeta, totalesFilas } from '@/lib/calc'
 import { fechaCorta, MESES } from '@/lib/format'
 import { useFormatoMoneda } from '@/lib/privado'
 import { entrada, escalonado } from '@/lib/motion'
@@ -79,6 +82,23 @@ function Subcategorias({ padre, filas, onAgregar, onRenombrar, onEliminar }) {
       )}
       <NuevaFilaForm className="mt-2" placeholder={`Nueva subcategoría de ${padre.nombre}`} onAgregar={onAgregar} />
     </div>
+  )
+}
+
+const transicionSuave = { duration: 250, easing: 'cubic-bezier(0.25, 1, 0.5, 1)' }
+
+function SortableFilaCategoria({ id, estiloBase, children, ...props }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id, transition: transicionSuave })
+  const style = {
+    ...estiloBase,
+    transform: CSS.Translate.toString(transform),
+    transition,
+    ...(isDragging ? { zIndex: 50, position: 'relative', opacity: 0.9, boxShadow: '0 8px 25px rgba(0,0,0,.12)', borderRadius: '12px', background: 'var(--color-card)' } : {}),
+  }
+  return (
+    <FilaCategoria ref={setNodeRef} style={style} {...attributes} dragHandleProps={listeners} {...props}>
+      {children}
+    </FilaCategoria>
   )
 }
 
@@ -180,14 +200,30 @@ export default function Presupuesto() {
   const [porEliminar, setPorEliminar] = useState(null)
   const [confirmando, setConfirmando] = useState(false)
   const { mes } = state
+  const anual = mes === null
   const egreso = tipo === 'Egreso'
-  const flujo = flujoMes(state, mes)
+  const flujo = anual ? flujoAnio(state) : flujoMes(state, mes)
   const filas = egreso ? flujo.egresos : flujo.ingresos
   const t = totalesFilas(filas)
   const porcentaje = Math.round(avance(t.proyectado, t.real) * 100)
   const cumplidas = filas.filter((f) => (egreso ? f.real > f.proyectado : f.proyectado && f.real >= f.proyectado)).length
   const hijasDe = (id) => state.categorias.filter((c) => c.padreId === id)
   const usos = porEliminar ? state.movimientos.filter((m) => m.categoriaId === porEliminar.id || hijasDe(porEliminar.id).some((h) => h.id === m.categoriaId)).length : 0
+
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }))
+  const handleDragEnd = useCallback(
+    (event) => {
+      const { active, over } = event
+      if (!over || active.id === over.id) return
+      const ids = filas.map((f) => f.id)
+      const oldIndex = ids.indexOf(active.id)
+      const newIndex = ids.indexOf(over.id)
+      if (oldIndex === -1 || newIndex === -1) return
+      const newIds = arrayMove(ids, oldIndex, newIndex)
+      actions.reordenar(newIds.map((id, i) => ({ id, orden: i })))
+    },
+    [filas, actions],
+  )
 
   const alternar = (id) =>
     setAbiertas((prev) => {
@@ -225,58 +261,63 @@ export default function Presupuesto() {
           ) : (
             <>
           <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-            <StatCard label={`Proyectado en ${MESES[mes].toLowerCase()}`} value={t.proyectado} />
+            <StatCard label={anual ? `Proyectado en ${state.anio}` : `Proyectado en ${MESES[mes].toLowerCase()}`} value={t.proyectado} />
             <StatCard label={egreso ? 'Gastado' : 'Recibido'} value={t.real} tone={egreso && t.real > t.proyectado ? 'negative' : 'positive'} hint={`${porcentaje}% de lo proyectado`} />
             <StatCard label={egreso ? 'Disponible' : 'Pendiente por recibir'} value={Math.max(t.diferencia, 0)} tone={egreso && t.diferencia < 0 ? 'negative' : undefined} hint={egreso && t.diferencia < 0 ? 'Presupuesto agotado' : undefined} />
             <StatCard label={egreso ? 'Categorías excedidas' : 'Categorías completas'} value={`${cumplidas} de ${filas.length}`} />
           </div>
           <div className="grid gap-5 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-            <Panel title={`Categorías de ${tipo.toLowerCase()}`} action={<p className="hidden text-xs text-muted-foreground md:block">Edita el valor proyectado en cada fila</p>}>
+            <Panel title={`Categorías de ${tipo.toLowerCase()}`} action={<p className="hidden text-xs text-muted-foreground md:block">{anual ? 'Suma de los 12 meses' : 'Edita el valor proyectado en cada fila'}</p>}>
               {filas.length ? (
-                <ul className="[&>li]:border-b 2xl:grid 2xl:grid-cols-2 2xl:gap-x-8">
-                  {filas.map((f, i) => {
-                    const hijas = hijasDe(f.id)
-                    const abierta = abiertas.has(f.id)
-                    return (
-                      <FilaCategoria
-                        key={f.id}
-                        categoria={f}
-                        proyectado={f.proyectado}
-                        real={f.real}
-                        onProyectado={(valor) => actions.setPresupuesto(mes, f.id, valor)}
-                        className={entrada}
-                        style={escalonado(i)}
-                        acciones={
-                          <AccionesCategoria
-                            nombre={f.nombre}
-                            onRenombrar={() => setRenombrando(f)}
-                            onSubcategorias={() => alternar(f.id)}
-                            onCopiar={() => actions.copiarPresupuesto(mes, f.id, f.proyectado)}
-                            onEliminar={() => pedirEliminar(f)}
-                          />
-                        }
-                      >
-                        {hijas.length || abierta ? (
-                          <>
-                            <button type="button" onClick={() => alternar(f.id)} aria-expanded={abierta} className="mt-2 inline-flex items-center gap-1 rounded-md text-xs font-semibold text-forest focus-visible:outline-2 focus-visible:outline-ring">
-                              <ChevronDown className={cn('size-4 transition-transform duration-200 ease-out', abierta && 'rotate-180')} aria-hidden="true" />
-                              {hijas.length ? `${hijas.length} ${hijas.length === 1 ? 'subcategoría' : 'subcategorías'}` : 'Subcategorías'}
-                            </button>
-                            {abierta ? (
-                              <Subcategorias
-                                padre={f}
-                                filas={desglose(state, mes, f.id)}
-                                onAgregar={(nombre) => actions.agregar('categorias', { nombre, tipo: f.tipo, padreId: f.id })}
-                                onRenombrar={setRenombrando}
-                                onEliminar={pedirEliminar}
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                  <SortableContext items={filas.map((f) => f.id)} strategy={rectSortingStrategy}>
+                    <ul className="[&>li]:border-b 2xl:grid 2xl:grid-cols-2 2xl:gap-x-8">
+                      {filas.map((f, i) => {
+                        const hijas = hijasDe(f.id)
+                        const abierta = abiertas.has(f.id)
+                        return (
+                          <SortableFilaCategoria
+                            key={f.id}
+                            id={f.id}
+                            categoria={f}
+                            proyectado={f.proyectado}
+                            real={f.real}
+                            onProyectado={anual ? undefined : (valor) => actions.setPresupuesto(mes, f.id, valor)}
+                            className={entrada}
+                            estiloBase={escalonado(i)}
+                            acciones={
+                              <AccionesCategoria
+                                nombre={f.nombre}
+                                onRenombrar={() => setRenombrando(f)}
+                                onSubcategorias={() => alternar(f.id)}
+                                onCopiar={() => actions.copiarPresupuesto(mes, f.id, f.proyectado)}
+                                onEliminar={() => pedirEliminar(f)}
                               />
+                            }
+                          >
+                            {hijas.length || abierta ? (
+                              <>
+                                <button type="button" onClick={() => alternar(f.id)} aria-expanded={abierta} className="mt-2 inline-flex items-center gap-1 rounded-md text-xs font-semibold text-forest focus-visible:outline-2 focus-visible:outline-ring">
+                                  <ChevronDown className={cn('size-4 transition-transform duration-200 ease-out', abierta && 'rotate-180')} aria-hidden="true" />
+                                  {hijas.length ? `${hijas.length} ${hijas.length === 1 ? 'subcategoría' : 'subcategorías'}` : 'Subcategorías'}
+                                </button>
+                                {abierta ? (
+                                  <Subcategorias
+                                    padre={f}
+                                    filas={desglose(state, mes, f.id)}
+                                    onAgregar={(nombre) => actions.agregar('categorias', { nombre, tipo: f.tipo, padreId: f.id })}
+                                    onRenombrar={setRenombrando}
+                                    onEliminar={pedirEliminar}
+                                  />
+                                ) : null}
+                              </>
                             ) : null}
-                          </>
-                        ) : null}
-                      </FilaCategoria>
-                    )
-                  })}
-                </ul>
+                          </SortableFilaCategoria>
+                        )
+                      })}
+                    </ul>
+                  </SortableContext>
+                </DndContext>
               ) : (
                 <EmptyState icon={ChartPie} title={`Sin categorías de ${tipo.toLowerCase()}`} description="Agrega la primera con el campo de abajo. Después podrás proyectar un valor para cada mes." />
               )}
