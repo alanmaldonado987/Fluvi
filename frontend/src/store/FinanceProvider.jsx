@@ -102,6 +102,47 @@ export function FinanceProvider({ children }) {
       aplicarRecurrente: (recurrente, mes) => agregarItem('movimientos', movimientoDesdeRecurrente(recurrente, estadoRef.current.anio, mes)),
       omitir: (mes, id) => ejecutar({ type: 'omitir', mes, id }, () => repo.omitir(estadoRef.current.anio, mes, id)),
       reordenar: (actualizaciones) => ejecutar({ type: 'reordenar', actualizaciones }, () => repo.reordenarCategorias(actualizaciones)),
+      prestar: (datos) => {
+        const deuda = { id: crypto.randomUUID(), ...datos, pagada: false }
+        const movimiento = nuevoItem('movimientos', {
+          fecha: datos.fecha,
+          tipo: 'Egreso',
+          categoriaId: null,
+          valor: datos.valor,
+          concepto: datos.concepto || `Préstamo a ${datos.persona}`,
+          observacion: '',
+          billeteraId: datos.billeteraId,
+          deudaId: deuda.id,
+        })
+        ejecutar(
+          [
+            { type: 'agregar', lista: 'deudas', datos: deuda },
+            { type: 'agregar', lista: 'movimientos', datos: movimiento },
+          ],
+          () => repo.insertar('deudas', deuda).then(() => repo.insertar('movimientos', movimiento)),
+        )
+      },
+      cobrar: (deudaId, billetePagoId, fecha) => {
+        const deuda = estadoRef.current.deudas.find((d) => d.id === deudaId)
+        if (!deuda) return
+        const movimiento = nuevoItem('movimientos', {
+          fecha,
+          tipo: 'Ingreso',
+          categoriaId: null,
+          valor: deuda.valor,
+          concepto: `Pago de ${deuda.persona}`,
+          observacion: '',
+          billeteraId: billetePagoId,
+          deudaId: deuda.id,
+        })
+        ejecutar(
+          [
+            { type: 'editar', lista: 'deudas', id: deudaId, datos: { pagada: true, billetePagoId, fechaPago: fecha } },
+            { type: 'agregar', lista: 'movimientos', datos: movimiento },
+          ],
+          () => repo.actualizar('deudas', deudaId, { pagada: true, billetePagoId, fechaPago: fecha }).then(() => repo.insertar('movimientos', movimiento)),
+        )
+      },
       borrarTodo: () => repo.borrarTodo().then(recargar),
     }
   }, [])

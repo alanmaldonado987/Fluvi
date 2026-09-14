@@ -1,4 +1,4 @@
-import { ArrowLeftRight, ChartPie, Eye, EyeOff, House, PanelLeftClose, PanelLeftOpen, Wallet, Waves } from 'lucide-react'
+import { ArrowLeftRight, ChartPie, Eye, EyeOff, HandCoins, House, PanelLeftClose, PanelLeftOpen, Wallet, Waves } from 'lucide-react'
 import { useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { Logo } from '@/components/Logo'
@@ -15,6 +15,7 @@ const rutas = [
   { to: '/movimientos', label: 'Movimientos', icon: ArrowLeftRight, tour: 'movimientos' },
   { to: '/presupuesto', label: 'Presupuesto', icon: ChartPie, tour: 'presupuesto' },
   { to: '/billeteras', label: 'Billeteras', icon: Wallet, tour: 'billeteras' },
+  { to: '/deudas', label: 'Deudas', icon: HandCoins, tour: 'deudas' },
   { to: '/flujo', label: 'Flujo', icon: Waves, tour: 'flujo' },
 ]
 
@@ -110,7 +111,7 @@ export function AppShell() {
       </main>
 
       <nav aria-label="Principal" className="fixed inset-x-0 bottom-0 z-20 border-t bg-card/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden">
-        <ul className="grid grid-cols-5">
+        <ul className="grid grid-cols-6">
           {rutas.map(({ to, label, icon: Icon, tour }) => (
             <li key={to}>
               <NavLink

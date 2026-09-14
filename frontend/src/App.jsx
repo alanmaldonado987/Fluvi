@@ -5,6 +5,7 @@ import { AppShell } from '@/components/layout/AppShell'
 import Billeteras from '@/pages/Billeteras'
 import Configuracion from '@/pages/Configuracion'
 import Dashboard from '@/pages/Dashboard'
+import Deudas from '@/pages/Deudas'
 import FlujoCaja from '@/pages/FlujoCaja'
 import Importar from '@/pages/Importar'
 import Login from '@/pages/Login'
@@ -32,6 +33,7 @@ const router = createBrowserRouter([
       { path: 'movimientos', element: <Movimientos /> },
       { path: 'presupuesto', element: <Presupuesto /> },
       { path: 'billeteras', element: <Billeteras /> },
+      { path: 'deudas', element: <Deudas /> },
       { path: 'flujo', element: <FlujoCaja /> },
       { path: 'configuracion/:seccion?', element: <Configuracion /> },
       { path: 'importar', element: <Importar /> },

@@ -1,7 +1,7 @@
 import { clave } from './calc'
 import { resultado, supabase } from './supabase'
 
-const columnas = { padreId: 'padre_id', categoriaId: 'categoria_id', recurrenteId: 'recurrente_id', billeteraId: 'billetera_id', destinoId: 'billetera_destino_id', fechaInicio: 'fecha_inicio', fechaLimite: 'fecha_limite' }
+const columnas = { padreId: 'padre_id', categoriaId: 'categoria_id', recurrenteId: 'recurrente_id', billeteraId: 'billetera_id', destinoId: 'billetera_destino_id', deudaId: 'deuda_id', billetePagoId: 'billetera_pago_id', fechaPago: 'fecha_pago', fechaInicio: 'fecha_inicio', fechaLimite: 'fecha_limite' }
 
 const aFila = (obj) =>
   Object.fromEntries(
@@ -24,9 +24,21 @@ const aMovimiento = (r) => ({
   ...(r.recurrente_id ? { recurrenteId: r.recurrente_id } : {}),
   ...(r.billetera_id ? { billeteraId: r.billetera_id } : {}),
   ...(r.billetera_destino_id ? { destinoId: r.billetera_destino_id } : {}),
+  ...(r.deuda_id ? { deudaId: r.deuda_id } : {}),
 })
 const aRecurrente = (r) => ({ id: r.id, tipo: r.tipo, categoriaId: r.categoria_id, concepto: r.concepto, valor: Number(r.valor), dia: r.dia, activo: r.activo })
 const aMeta = (r) => ({ id: r.id, nombre: r.nombre, objetivo: Number(r.objetivo), categoriaId: r.categoria_id, fechaInicio: r.fecha_inicio, fechaLimite: r.fecha_limite })
+const aDeuda = (r) => ({
+  id: r.id,
+  persona: r.persona,
+  valor: Number(r.valor),
+  billeteraId: r.billetera_id,
+  concepto: r.concepto,
+  fecha: r.fecha,
+  pagada: r.pagada,
+  ...(r.billetera_pago_id ? { billetePagoId: r.billetera_pago_id } : {}),
+  ...(r.fecha_pago ? { fechaPago: r.fecha_pago } : {}),
+})
 
 const consultar = (tabla, orden) => {
   const q = supabase.from(tabla).select('*')
@@ -34,7 +46,7 @@ const consultar = (tabla, orden) => {
 }
 
 export async function cargarTodo() {
-  const [categorias, billeteras, movimientos, presupuestos, saldos, recurrentes, omitidos, metas, notas] = await Promise.all([
+  const [categorias, billeteras, movimientos, presupuestos, saldos, recurrentes, omitidos, metas, notas, deudas] = await Promise.all([
     consultar('categorias', 'orden'),
     consultar('billeteras', 'creado_en'),
     consultar('movimientos', 'fecha'),
@@ -44,6 +56,7 @@ export async function cargarTodo() {
     consultar('recurrentes_omitidos'),
     consultar('metas', 'creado_en'),
     consultar('notas_mes'),
+    consultar('deudas', 'creado_en'),
   ])
   return {
     categorias: categorias.map(aCategoria),
@@ -55,6 +68,7 @@ export async function cargarTodo() {
     omitidos: Object.fromEntries(omitidos.map((o) => [clave(o.anio, o.mes - 1, o.recurrente_id), true])),
     metas: metas.map(aMeta),
     notas: Object.fromEntries(notas.map((n) => [`${n.anio}-${n.mes - 1}`, n.texto])),
+    deudas: deudas.map(aDeuda),
   }
 }
 

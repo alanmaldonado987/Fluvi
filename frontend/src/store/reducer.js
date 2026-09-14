@@ -15,6 +15,7 @@ export const estadoVacio = {
   omitidos: {},
   metas: [],
   notas: {},
+  deudas: [],
 }
 
 const sinIds = (mapa, ids) => Object.fromEntries(Object.entries(mapa).filter(([k]) => !ids.has(idDeClave(k))))
@@ -32,9 +33,11 @@ export function reducer(state, action) {
     case 'eliminar': {
       const hijas = action.lista === 'categorias' ? state.categorias.filter((c) => c.padreId === action.id).map((c) => c.id) : []
       const ids = new Set([action.id, ...hijas])
+      const movimientos = action.lista === 'deudas' ? state.movimientos.filter((m) => m.deudaId !== action.id) : state.movimientos
       return {
         ...state,
         [action.lista]: state[action.lista].filter((x) => !ids.has(x.id)),
+        movimientos,
         presupuestos: sinIds(state.presupuestos, ids),
         saldos: sinIds(state.saldos, ids),
       }

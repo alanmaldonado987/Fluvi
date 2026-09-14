@@ -235,7 +235,7 @@ export async function exportarExcel(state, anio) {
     .sort((a, b) => a.fecha.localeCompare(b.fecha) || a.consecutivo - b.consecutivo)
   const registros = movsAnio.map((m, i) => {
     const [y, mo, d] = m.fecha.split('-').map(Number)
-    return [i + 1, new Date(y, mo - 1, d), MESES[mo - 1], m.tipo, nombreCategoria(m.categoriaId), m.concepto, m.valor, m.observacion || '']
+    return [i + 1, new Date(y, mo - 1, d), MESES[mo - 1], m.tipo, m.deudaId ? 'Préstamo' : nombreCategoria(m.categoriaId), m.concepto, m.valor, m.observacion || '']
   })
 
   const libro = new ExcelJS.Workbook()
