@@ -142,7 +142,7 @@ export function flujoMulti(state, meses) {
   return {
     ingresos: filas.filter((f) => f.tipo === 'Ingreso'),
     egresos: filas.filter((f) => f.tipo === 'Egreso'),
-    saldoInicial: saldoInicial(state, Math.min(...arr)),
+    saldoInicial: arr.length ? saldoInicial(state, Math.min(...arr)) : 0,
   }
 }
 

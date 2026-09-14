@@ -11,6 +11,7 @@ const anios = [actual - 1, actual, actual + 1].map((a) => ({ value: String(a), l
 function etiquetaMeses(mes) {
   if (mes === null) return 'Todo el año'
   if (typeof mes === 'number') return MESES[mes]
+  if (mes.length === 0) return 'Ningún mes'
   if (mes.length <= 4) return mes.map((m) => MESES_CORTO[m]).join(', ')
   return `${mes.length} meses`
 }
@@ -34,7 +35,8 @@ export function MonthPicker({ className }) {
   const todos = seleccion.size === 12
 
   const aplicar = (next) => {
-    if (next.size === 0 || next.size === 12) actions.setPeriodo({ mes: null })
+    if (next.size === 12) actions.setPeriodo({ mes: null })
+    else if (next.size === 0) actions.setPeriodo({ mes: [] })
     else if (next.size === 1) actions.setPeriodo({ mes: [...next][0] })
     else actions.setPeriodo({ mes: [...next].sort((a, b) => a - b) })
   }
@@ -47,7 +49,7 @@ export function MonthPicker({ className }) {
   }
 
   const toggleTodos = () => {
-    actions.setPeriodo({ mes: todos ? new Date().getMonth() : null })
+    actions.setPeriodo({ mes: todos ? [] : null })
   }
 
   return (
