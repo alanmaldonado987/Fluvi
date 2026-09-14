@@ -12,6 +12,7 @@ const pasos = [
   { ruta: '/billeteras', objetivo: 'billeteras', titulo: 'Billeteras', texto: 'Registra tus cuentas, como Nequi, el banco o el efectivo, y anota el saldo con el que cierras cada mes.' },
   { ruta: '/movimientos', objetivo: 'movimientos', titulo: 'Movimientos', texto: 'Aquí anotas cada gasto, ingreso o transferencia entre billeteras. Marca "Repetir cada mes" en los fijos, como el arriendo.' },
   { ruta: '/movimientos', objetivo: 'importar', titulo: 'Importar Excel', texto: '¿Vienes del Excel? Cárgalo una sola vez y se crean tus categorías, billeteras, presupuestos y movimientos.' },
+  { ruta: '/deudas', objetivo: 'deudas', titulo: 'Deudas', texto: 'Registra los préstamos que haces y cobra cuando te paguen. Si la deuda es grande, puedes registrar abonos parciales hasta completar el pago.' },
   { ruta: '/flujo', objetivo: 'flujo', titulo: 'Flujo', texto: 'Compara lo que planeaste con lo que realmente pasó, categoría por categoría y mes a mes.' },
   { objetivo: 'privado', titulo: 'Modo privado', texto: 'Oculta todas las cifras con un toque, útil cuando revisas tus finanzas en público.' },
   { objetivo: 'usuario', titulo: 'Tu cuenta', texto: 'Desde tu menú entras a Configuración: perfil, notificaciones, tema oscuro, copia de seguridad y cierre de sesión.' },
