@@ -122,26 +122,27 @@ export function FinanceProvider({ children }) {
           () => repo.insertar('deudas', deuda).then(() => repo.insertar('movimientos', movimiento)),
         )
       },
-      cobrar: (deudaId, billetePagoId, fecha) => {
+      cobrar: (deudaId, billetePagoId, fecha, monto) => {
         const deuda = estadoRef.current.deudas.find((d) => d.id === deudaId)
         if (!deuda) return
+        const abonado = estadoRef.current.movimientos.filter((m) => m.deudaId === deudaId && m.tipo === 'Ingreso').reduce((t, m) => t + m.valor, 0)
+        const pagaCompleta = abonado + monto >= deuda.valor
         const movimiento = nuevoItem('movimientos', {
           fecha,
           tipo: 'Ingreso',
           categoriaId: null,
-          valor: deuda.valor,
-          concepto: `Pago de ${deuda.persona}`,
+          valor: monto,
+          concepto: pagaCompleta ? `Pago de ${deuda.persona}` : `Abono de ${deuda.persona}`,
           observacion: '',
           billeteraId: billetePagoId,
           deudaId: deuda.id,
         })
-        ejecutar(
-          [
-            { type: 'editar', lista: 'deudas', id: deudaId, datos: { pagada: true, billetePagoId, fechaPago: fecha } },
-            { type: 'agregar', lista: 'movimientos', datos: movimiento },
-          ],
-          () => repo.actualizar('deudas', deudaId, { pagada: true, billetePagoId, fechaPago: fecha }).then(() => repo.insertar('movimientos', movimiento)),
-        )
+        const acciones = [{ type: 'agregar', lista: 'movimientos', datos: movimiento }]
+        if (pagaCompleta) acciones.push({ type: 'editar', lista: 'deudas', id: deudaId, datos: { pagada: true, billetePagoId, fechaPago: fecha } })
+        ejecutar(acciones, () => {
+          const p = repo.insertar('movimientos', movimiento)
+          return pagaCompleta ? p.then(() => repo.actualizar('deudas', deudaId, { pagada: true, billetePagoId, fechaPago: fecha })) : p
+        })
       },
       borrarTodo: () => repo.borrarTodo().then(recargar),
     }

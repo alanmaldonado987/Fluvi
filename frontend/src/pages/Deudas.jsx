@@ -1,5 +1,5 @@
 import { Check, HandCoins, Plus, Trash2 } from 'lucide-react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { DeudaDialog } from '@/components/DeudaDialog'
 import { EmptyState } from '@/components/EmptyState'
@@ -20,8 +20,16 @@ export default function Deudas() {
   const [porEliminar, setPorEliminar] = useState(null)
   const { mes, anio, deudas, billeteras } = state
 
+  const abonosPorDeuda = useMemo(() => {
+    const map = {}
+    for (const m of state.movimientos) {
+      if (m.deudaId && m.tipo === 'Ingreso') map[m.deudaId] = (map[m.deudaId] || 0) + m.valor
+    }
+    return map
+  }, [state.movimientos])
+
   const pendientes = deudas.filter((d) => !d.pagada)
-  const totalPorCobrar = pendientes.reduce((t, d) => t + d.valor, 0)
+  const totalPorCobrar = pendientes.reduce((t, d) => t + d.valor - (abonosPorDeuda[d.id] || 0), 0)
 
   const movsPeriodo = movsFiltrados(state.movimientos, anio, mes)
   const cobradoEnPeriodo = movsPeriodo.filter((m) => m.tipo === 'Ingreso' && m.deudaId).reduce((t, m) => t + m.valor, 0)
@@ -59,28 +67,43 @@ export default function Deudas() {
 
           {pendientes.length ? (
             <ul className="grid gap-3 sm:grid-cols-2">
-              {pendientes.map((d, i) => (
-                <li key={d.id} className={`rounded-2xl bg-card p-4 ring-1 ring-border ${entrada}`} style={escalonado(i)}>
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="truncate font-semibold">{d.persona}</p>
-                      <Money value={d.valor} className="text-xl font-bold" />
+              {pendientes.map((d, i) => {
+                const abonado = abonosPorDeuda[d.id] || 0
+                const restante = d.valor - abonado
+                return (
+                  <li key={d.id} className={`rounded-2xl bg-card p-4 ring-1 ring-border ${entrada}`} style={escalonado(i)}>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold">{d.persona}</p>
+                        <Money value={restante} className="text-xl font-bold" />
+                      </div>
+                      <span className="flex shrink-0">
+                        <Button variant="ghost" size="icon" className="size-8 text-positive" aria-label={`Cobrar a ${d.persona}`} onClick={() => setDialog({ modo: 'cobrar', deuda: d })}>
+                          <Check />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="size-8" aria-label={`Eliminar deuda de ${d.persona}`} onClick={() => setPorEliminar(d)}>
+                          <Trash2 />
+                        </Button>
+                      </span>
                     </div>
-                    <span className="flex shrink-0">
-                      <Button variant="ghost" size="icon" className="size-8 text-positive" aria-label={`Cobrar a ${d.persona}`} onClick={() => setDialog({ modo: 'cobrar', deuda: d })}>
-                        <Check />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="size-8" aria-label={`Eliminar deuda de ${d.persona}`} onClick={() => setPorEliminar(d)}>
-                        <Trash2 />
-                      </Button>
-                    </span>
-                  </div>
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    {fechaCorta(d.fecha)} · {nombreBilletera(billeteras, d.billeteraId)}
-                    {d.concepto ? ` · ${d.concepto}` : ''}
-                  </p>
-                </li>
-              ))}
+                    {abonado > 0 && (
+                      <div className="mt-2">
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>Abonado: ${abonado.toLocaleString('es-CO')}</span>
+                          <span>de ${d.valor.toLocaleString('es-CO')}</span>
+                        </div>
+                        <div className="mt-1 h-1.5 rounded-full bg-muted">
+                          <div className="h-full rounded-full bg-leaf transition-all" style={{ width: `${Math.min(100, (abonado / d.valor) * 100)}%` }} />
+                        </div>
+                      </div>
+                    )}
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      {fechaCorta(d.fecha)} · {nombreBilletera(billeteras, d.billeteraId)}
+                      {d.concepto ? ` · ${d.concepto}` : ''}
+                    </p>
+                  </li>
+                )
+              })}
             </ul>
           ) : (
             <EmptyState icon={HandCoins} title="Sin deudas pendientes" description="Cuando prestes dinero, regístralo aquí para llevar el control." />
@@ -111,8 +134,9 @@ export default function Deudas() {
         onOpenChange={(abierto) => { if (!abierto) setDialog(null) }}
         modo={dialog?.modo ?? 'prestar'}
         deuda={dialog?.deuda}
+        abonado={dialog?.deuda ? (abonosPorDeuda[dialog.deuda.id] || 0) : 0}
         onPrestar={(datos) => actions.prestar(datos)}
-        onCobrar={(id, billetera, fecha) => actions.cobrar(id, billetera, fecha)}
+        onCobrar={(id, billetera, fecha, monto) => actions.cobrar(id, billetera, fecha, monto)}
       />
 
       <ConfirmDialog
