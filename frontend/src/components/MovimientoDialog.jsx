@@ -30,7 +30,7 @@ function Formulario({ inicial, onGuardar, onEliminar }) {
 
   const enviar = (e) => {
     e.preventDefault()
-    const { subcategoriaId, categoriaId, ...resto } = datos
+    const { subcategoriaId, categoriaId, ...resto } = { ...datos, concepto: datos.concepto.trim(), observacion: datos.observacion.trim() }
     onGuardar(transferencia ? { ...resto, categoriaId: null } : { ...resto, categoriaId: subcategoriaId ?? categoriaId, destinoId: null }, !transferencia && repetir)
   }
 
@@ -84,10 +84,10 @@ function Formulario({ inicial, onGuardar, onEliminar }) {
         )}
       </div>
       <Campo label="Concepto">
-        <Input placeholder={transferencia ? 'Ej. Retiro en cajero' : 'Ej. Mercado de la quincena'} value={datos.concepto} onChange={(e) => set('concepto')(e.target.value)} />
+        <Input maxLength={120} placeholder={transferencia ? 'Ej. Retiro en cajero' : 'Ej. Mercado de la quincena'} value={datos.concepto} onChange={(e) => set('concepto')(e.target.value)} />
       </Campo>
       <Campo label="Observación">
-        <Input placeholder="Opcional" value={datos.observacion} onChange={(e) => set('observacion')(e.target.value)} />
+        <Input maxLength={200} placeholder="Opcional" value={datos.observacion} onChange={(e) => set('observacion')(e.target.value)} />
       </Campo>
       {inicial ? (
         <HistorialMovimiento movimientoId={inicial.id} />

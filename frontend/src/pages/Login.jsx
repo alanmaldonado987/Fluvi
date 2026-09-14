@@ -46,6 +46,7 @@ export default function Login() {
 
   const enviar = async (e) => {
     e.preventDefault()
+    if (modo === 'registrar' && !nombre.trim()) return
     setEnviando(true)
     setAviso(null)
     try {
@@ -86,12 +87,12 @@ export default function Login() {
             {modo === 'registrar' ? (
               <div className="grid gap-1.5">
                 <Label htmlFor="nombre">Nombre</Label>
-                <Input id="nombre" autoComplete="name" required value={nombre} onChange={(e) => setNombre(e.target.value)} />
+                <Input id="nombre" autoComplete="name" required maxLength={80} value={nombre} onChange={(e) => setNombre(e.target.value)} />
               </div>
             ) : null}
             <div className="grid gap-1.5">
               <Label htmlFor="email">Correo</Label>
-              <Input id="email" type="email" autoComplete="email" required placeholder="tu@correo.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+              <Input id="email" type="email" autoComplete="email" required maxLength={120} placeholder="tu@correo.com" value={email} onChange={(e) => setEmail(e.target.value)} />
             </div>
             {modo === 'recuperar' ? null : (
               <div className="grid gap-1.5">
@@ -104,7 +105,7 @@ export default function Login() {
                   ) : null}
                 </div>
                 <div className="relative">
-                  <Input id="clave" type={verClave ? 'text' : 'password'} autoComplete={modo === 'registrar' ? 'new-password' : 'current-password'} required minLength={6} className="pr-11" value={clave} onChange={(e) => setClave(e.target.value)} />
+                  <Input id="clave" type={verClave ? 'text' : 'password'} autoComplete={modo === 'registrar' ? 'new-password' : 'current-password'} required minLength={6} maxLength={72} className="pr-11" value={clave} onChange={(e) => setClave(e.target.value)} />
                   <button
                     type="button"
                     aria-label={verClave ? 'Ocultar contraseña' : 'Mostrar contraseña'}

@@ -32,7 +32,7 @@ function ListaCategorias({ tipo, categorias, nombreFinal, existe, onCambio }) {
       <ul className="mt-2 grid gap-2">
         {filas.map((c) => (
           <li key={claveCat(c)} className={cn('flex items-center gap-2', c.padre && 'pl-6')}>
-            <Input aria-label={`Nombre de ${c.nombre}`} className="bg-card" value={nombreFinal(c)} onChange={(e) => onCambio(c, e.target.value)} />
+            <Input aria-label={`Nombre de ${c.nombre}`} maxLength={60} className="bg-card" value={nombreFinal(c)} onChange={(e) => onCambio(c, e.target.value)} />
             <span className={cn('shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold', existe(c) ? 'bg-muted text-muted-foreground' : 'bg-mint text-forest')}>{existe(c) ? 'existente' : 'nueva'}</span>
           </li>
         ))}

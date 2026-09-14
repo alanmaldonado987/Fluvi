@@ -23,7 +23,7 @@ function FormPrestar({ onGuardar }) {
   return (
     <form className="grid gap-4" onSubmit={enviar}>
       <Campo label="Persona">
-        <Input autoFocus placeholder="¿Quién te debe?" value={datos.persona} onChange={(e) => set('persona')(e.target.value)} />
+        <Input autoFocus maxLength={80} placeholder="¿Quién te debe?" value={datos.persona} onChange={(e) => set('persona')(e.target.value)} />
       </Campo>
       <Campo label="Valor prestado">
         <MoneyInput className="h-14 text-2xl font-bold" value={datos.valor} onValueChange={set('valor')} />
@@ -37,7 +37,7 @@ function FormPrestar({ onGuardar }) {
         </Campo>
       </div>
       <Campo label="Concepto">
-        <Input placeholder="Opcional" value={datos.concepto} onChange={(e) => set('concepto')(e.target.value)} />
+        <Input maxLength={120} placeholder="Opcional" value={datos.concepto} onChange={(e) => set('concepto')(e.target.value)} />
       </Campo>
       <DialogFooter>
         <DialogClose render={<Button variant="outline" />}>Cancelar</DialogClose>

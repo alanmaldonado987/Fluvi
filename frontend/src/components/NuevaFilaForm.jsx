@@ -16,7 +16,7 @@ export function NuevaFilaForm({ placeholder, onAgregar, className }) {
         setNombre('')
       }}
     >
-      <Input aria-label={placeholder} placeholder={placeholder} className="max-w-xs bg-card" value={nombre} onChange={(e) => setNombre(e.target.value)} />
+      <Input aria-label={placeholder} maxLength={60} placeholder={placeholder} className="max-w-xs bg-card" value={nombre} onChange={(e) => setNombre(e.target.value)} />
       <Button type="submit" variant="secondary" disabled={!limpio}>
         <Plus /> Agregar
       </Button>

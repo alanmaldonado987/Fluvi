@@ -104,10 +104,10 @@ function Seguridad() {
       <Panel title="Contraseña">
         <form onSubmit={cambiar} className="grid gap-4 sm:max-w-md">
           <Campo label="Contraseña nueva">
-            <Input type="password" autoComplete="new-password" minLength={6} placeholder="Mínimo 6 caracteres" className="bg-card" value={clave} onChange={(e) => setClave(e.target.value)} />
+            <Input type="password" autoComplete="new-password" minLength={6} maxLength={72} placeholder="Mínimo 6 caracteres" className="bg-card" value={clave} onChange={(e) => setClave(e.target.value)} />
           </Campo>
           <Campo label="Repite la contraseña">
-            <Input type="password" autoComplete="new-password" minLength={6} className="bg-card" value={confirmacion} onChange={(e) => setConfirmacion(e.target.value)} />
+            <Input type="password" autoComplete="new-password" minLength={6} maxLength={72} className="bg-card" value={confirmacion} onChange={(e) => setConfirmacion(e.target.value)} />
           </Campo>
           {confirmacion && !coincide ? <p className="text-xs text-negative">Las contraseñas no coinciden o tienen menos de 6 caracteres.</p> : null}
           <Button type="submit" variant="secondary" className="justify-self-start" disabled={!coincide || enviando}>
@@ -175,10 +175,10 @@ function Notificaciones() {
       <Panel title="Umbrales de los recordatorios">
         <div className="grid gap-4 sm:grid-cols-2">
           <Campo label="Avisar tras días sin registrar">
-            <Input type="number" inputMode="numeric" min={1} max={30} className="bg-card" disabled={!prefs.recordatorios} value={prefs.diasSinRegistrar} onChange={(e) => set('diasSinRegistrar')(Number(e.target.value))} />
+            <Input type="number" inputMode="numeric" min={1} max={30} step={1} className="bg-card" disabled={!prefs.recordatorios} value={prefs.diasSinRegistrar} onChange={(e) => { const n = Math.round(Number(e.target.value)); if (n >= 1 && n <= 30) set('diasSinRegistrar')(n) }} />
           </Campo>
           <Campo label="Avisar al superar este % del presupuesto">
-            <Input type="number" inputMode="numeric" min={50} max={100} className="bg-card" disabled={!prefs.recordatorios} value={prefs.umbralPresupuesto} onChange={(e) => set('umbralPresupuesto')(Number(e.target.value))} />
+            <Input type="number" inputMode="numeric" min={50} max={100} step={1} className="bg-card" disabled={!prefs.recordatorios} value={prefs.umbralPresupuesto} onChange={(e) => { const n = Math.round(Number(e.target.value)); if (n >= 50 && n <= 100) set('umbralPresupuesto')(n) }} />
           </Campo>
         </div>
       </Panel>

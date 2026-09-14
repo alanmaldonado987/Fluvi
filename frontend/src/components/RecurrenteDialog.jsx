@@ -15,13 +15,13 @@ function Formulario({ inicial, onGuardar }) {
   const { state } = useFinance()
   const [datos, setDatos] = useState(() => (inicial ? { ...inicial, ...separarCategoria(state.categorias, inicial.categoriaId) } : nuevo()))
   const set = (campo) => (valor) => setDatos((d) => ({ ...d, [campo]: valor }))
-  const dia = Number(datos.dia)
+  const dia = Math.round(Number(datos.dia))
   const valido = datos.categoriaId && datos.valor > 0 && dia >= 1 && dia <= 31
 
   const enviar = (e) => {
     e.preventDefault()
     const { subcategoriaId, categoriaId, ...resto } = datos
-    onGuardar({ ...resto, categoriaId: subcategoriaId ?? categoriaId, dia })
+    onGuardar({ ...resto, concepto: resto.concepto.trim(), categoriaId: subcategoriaId ?? categoriaId, dia })
   }
 
   return (
@@ -37,12 +37,12 @@ function Formulario({ inicial, onGuardar }) {
       </Campo>
       <div className="grid grid-cols-2 gap-3">
         <Campo label="Día del mes">
-          <Input type="number" inputMode="numeric" min={1} max={31} required value={datos.dia} onChange={(e) => set('dia')(e.target.value)} />
+          <Input type="number" inputMode="numeric" min={1} max={31} step={1} required value={datos.dia} onChange={(e) => set('dia')(e.target.value)} />
         </Campo>
         <SelectorCategoria tipo={datos.tipo} categoriaId={datos.categoriaId} subcategoriaId={datos.subcategoriaId} onChange={(sel) => setDatos((d) => ({ ...d, ...sel }))} claseSub="col-span-2" />
       </div>
       <Campo label="Concepto">
-        <Input placeholder="Ej. Arriendo" value={datos.concepto} onChange={(e) => set('concepto')(e.target.value)} />
+        <Input maxLength={120} placeholder="Ej. Arriendo" value={datos.concepto} onChange={(e) => set('concepto')(e.target.value)} />
       </Campo>
       <DialogFooter>
         <DialogClose render={<Button variant="outline" />}>Cancelar</DialogClose>

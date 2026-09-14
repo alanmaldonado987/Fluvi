@@ -4,7 +4,7 @@ import { Campo } from '@/components/Campo'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
-export function FormularioInline({ label, tipo = 'text', valorInicial = '', placeholder, minLength, autoComplete, onGuardar }) {
+export function FormularioInline({ label, tipo = 'text', valorInicial = '', placeholder, minLength, maxLength = 120, autoComplete, onGuardar }) {
   const [valor, setValor] = useState(valorInicial)
   const [enviando, setEnviando] = useState(false)
   const limpio = valor.trim()
@@ -25,7 +25,7 @@ export function FormularioInline({ label, tipo = 'text', valorInicial = '', plac
       }}
     >
       <Campo label={label} className="flex-1">
-        <Input type={tipo} placeholder={placeholder} minLength={minLength} autoComplete={autoComplete} className="bg-card" value={valor} onChange={(e) => setValor(e.target.value)} />
+        <Input type={tipo} placeholder={placeholder} minLength={minLength} maxLength={maxLength} autoComplete={autoComplete} className="bg-card" value={valor} onChange={(e) => setValor(e.target.value)} />
       </Campo>
       <Button type="submit" variant="secondary" disabled={!cambio || enviando}>
         {enviando ? <LoaderCircle className="animate-spin" aria-hidden="true" /> : null}

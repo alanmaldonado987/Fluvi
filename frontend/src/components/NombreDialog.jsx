@@ -14,7 +14,7 @@ function Formulario({ valor, onGuardar }) {
         onGuardar(limpio)
       }}
     >
-      <Input autoFocus aria-label="Nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} />
+      <Input autoFocus maxLength={60} aria-label="Nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} />
       <DialogFooter>
         <DialogClose render={<Button variant="outline" />}>Cancelar</DialogClose>
         <Button type="submit" disabled={!limpio || limpio === valor}>

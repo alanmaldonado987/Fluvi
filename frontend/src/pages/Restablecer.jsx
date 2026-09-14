@@ -45,11 +45,11 @@ export default function Restablecer() {
             <div className="mt-8 grid gap-4">
               <div className="grid gap-1.5">
                 <Label htmlFor="clave">Contraseña nueva</Label>
-                <Input id="clave" type="password" autoComplete="new-password" required minLength={6} autoFocus value={clave} onChange={(e) => setClave(e.target.value)} />
+                <Input id="clave" type="password" autoComplete="new-password" required minLength={6} maxLength={72} autoFocus value={clave} onChange={(e) => setClave(e.target.value)} />
               </div>
               <div className="grid gap-1.5">
                 <Label htmlFor="confirmacion">Repite la contraseña</Label>
-                <Input id="confirmacion" type="password" autoComplete="new-password" required minLength={6} value={confirmacion} onChange={(e) => setConfirmacion(e.target.value)} />
+                <Input id="confirmacion" type="password" autoComplete="new-password" required minLength={6} maxLength={72} value={confirmacion} onChange={(e) => setConfirmacion(e.target.value)} />
               </div>
               {confirmacion && !coincide ? <p className="text-xs text-negative">Las contraseñas no coinciden o tienen menos de 6 caracteres.</p> : null}
               {error ? (

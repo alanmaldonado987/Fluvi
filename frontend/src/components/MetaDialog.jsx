@@ -19,7 +19,8 @@ function Formulario({ inicial, onGuardar }) {
     { value: p.id, label: p.nombre },
     ...state.categorias.filter((c) => c.padreId === p.id).map((h) => ({ value: h.id, label: `${p.nombre} / ${h.nombre}` })),
   ])
-  const valido = datos.nombre.trim() && datos.objetivo > 0 && datos.categoriaId && datos.fechaInicio
+  const fechaLimiteValida = !datos.fechaLimite || datos.fechaLimite >= datos.fechaInicio
+  const valido = datos.nombre.trim() && datos.objetivo > 0 && datos.categoriaId && datos.fechaInicio && fechaLimiteValida
 
   return (
     <form
@@ -30,7 +31,7 @@ function Formulario({ inicial, onGuardar }) {
       }}
     >
       <Campo label="Nombre">
-        <Input autoFocus placeholder="Ej. Viaje a Cartagena" value={datos.nombre} onChange={(e) => set('nombre')(e.target.value)} />
+        <Input autoFocus maxLength={80} placeholder="Ej. Viaje a Cartagena" value={datos.nombre} onChange={(e) => set('nombre')(e.target.value)} />
       </Campo>
       <Campo label="Objetivo">
         <MoneyInput className="h-12 text-xl font-bold" value={datos.objetivo} onValueChange={set('objetivo')} />
@@ -44,9 +45,10 @@ function Formulario({ inicial, onGuardar }) {
           <Input type="date" required value={datos.fechaInicio} onChange={(e) => set('fechaInicio')(e.target.value)} />
         </Campo>
         <Campo label="Fecha límite">
-          <Input type="date" value={datos.fechaLimite} onChange={(e) => set('fechaLimite')(e.target.value)} />
+          <Input type="date" min={datos.fechaInicio || undefined} value={datos.fechaLimite} onChange={(e) => set('fechaLimite')(e.target.value)} />
         </Campo>
       </div>
+      {datos.fechaLimite && !fechaLimiteValida ? <p className="text-xs text-negative">La fecha límite debe ser igual o posterior al inicio.</p> : null}
       <DialogFooter>
         <DialogClose render={<Button variant="outline" />}>Cancelar</DialogClose>
         <Button type="submit" disabled={!valido}>

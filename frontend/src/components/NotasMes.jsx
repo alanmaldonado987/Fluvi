@@ -12,6 +12,7 @@ export function NotasMes() {
     <Panel title={`Notas de ${MESES[state.mes].toLowerCase()}`} action={<p className="text-xs text-muted-foreground">Se guardan solas</p>}>
       <Textarea
         rows={3}
+        maxLength={500}
         aria-label={`Notas de ${MESES[state.mes]} ${state.anio}`}
         placeholder="Contexto del mes: un viaje, un cambio de plan, algo que explique los números cuando los mires dentro de un año."
         className="bg-card"
