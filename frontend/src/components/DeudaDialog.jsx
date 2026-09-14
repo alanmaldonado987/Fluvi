@@ -47,6 +47,48 @@ function FormPrestar({ onGuardar }) {
   )
 }
 
+function FormEditar({ deuda, abonado = 0, onGuardar }) {
+  const { state } = useFinance()
+  const [datos, setDatos] = useState({ persona: deuda.persona, valor: deuda.valor, billeteraId: deuda.billeteraId, concepto: deuda.concepto, fecha: deuda.fecha })
+  const set = (campo) => (valor) => setDatos((d) => ({ ...d, [campo]: valor }))
+  const billeteras = state.billeteras.map((b) => ({ value: b.id, label: b.nombre }))
+  const valido = datos.persona.trim() && datos.valor > 0 && datos.billeteraId && datos.fecha && datos.valor >= abonado
+
+  const enviar = (e) => {
+    e.preventDefault()
+    onGuardar(deuda.id, { ...datos, persona: datos.persona.trim(), concepto: datos.concepto.trim() })
+  }
+
+  return (
+    <form className="grid gap-4" onSubmit={enviar}>
+      <Campo label="Persona">
+        <Input autoFocus maxLength={80} placeholder="¿Quién te debe?" value={datos.persona} onChange={(e) => set('persona')(e.target.value)} />
+      </Campo>
+      <Campo label="Valor prestado">
+        <MoneyInput className="h-14 text-2xl font-bold" value={datos.valor} onValueChange={set('valor')} />
+      </Campo>
+      {abonado > 0 && datos.valor < abonado && (
+        <p className="text-sm text-destructive">El valor no puede ser menor que lo abonado (${abonado.toLocaleString('es-CO')})</p>
+      )}
+      <div className="grid grid-cols-2 gap-3">
+        <Campo label="Billetera de salida">
+          <SelectField placeholder="Elige una" value={datos.billeteraId} onChange={set('billeteraId')} items={billeteras} />
+        </Campo>
+        <Campo label="Fecha">
+          <Input type="date" required value={datos.fecha} onChange={(e) => set('fecha')(e.target.value)} />
+        </Campo>
+      </div>
+      <Campo label="Concepto">
+        <Input maxLength={120} placeholder="Opcional" value={datos.concepto} onChange={(e) => set('concepto')(e.target.value)} />
+      </Campo>
+      <DialogFooter>
+        <DialogClose render={<Button variant="outline" />}>Cancelar</DialogClose>
+        <Button type="submit" disabled={!valido}>Guardar cambios</Button>
+      </DialogFooter>
+    </form>
+  )
+}
+
 function FormCobrar({ deuda, abonado = 0, onGuardar }) {
   const { state } = useFinance()
   const restante = deuda.valor - abonado
@@ -86,15 +128,18 @@ function FormCobrar({ deuda, abonado = 0, onGuardar }) {
   )
 }
 
-export function DeudaDialog({ open, onOpenChange, modo = 'prestar', deuda, abonado, onPrestar, onCobrar }) {
+export function DeudaDialog({ open, onOpenChange, modo = 'prestar', deuda, abonado, onPrestar, onCobrar, onEditar }) {
+  const titulo = { prestar: 'Nuevo préstamo', cobrar: 'Cobrar deuda', editar: 'Editar deuda' }
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md max-sm:top-auto max-sm:bottom-0 max-sm:max-w-full max-sm:translate-y-0 max-sm:rounded-b-none max-sm:duration-300 max-sm:ease-drawer max-sm:data-open:zoom-in-100 max-sm:data-open:slide-in-from-bottom-8 max-sm:data-closed:zoom-out-100 max-sm:data-closed:slide-out-to-bottom-8">
         <DialogHeader>
-          <DialogTitle>{modo === 'cobrar' ? 'Cobrar deuda' : 'Nuevo préstamo'}</DialogTitle>
+          <DialogTitle>{titulo[modo] ?? titulo.prestar}</DialogTitle>
         </DialogHeader>
         {modo === 'cobrar' && deuda ? (
           <FormCobrar deuda={deuda} abonado={abonado} onGuardar={(...args) => { onCobrar(...args); onOpenChange(false) }} />
+        ) : modo === 'editar' && deuda ? (
+          <FormEditar deuda={deuda} abonado={abonado} onGuardar={(...args) => { onEditar(...args); onOpenChange(false) }} />
         ) : (
           <FormPrestar onGuardar={(datos) => { onPrestar(datos); onOpenChange(false) }} />
         )}

@@ -1,4 +1,4 @@
-import { Check, HandCoins, Plus, Trash2 } from 'lucide-react'
+import { Check, HandCoins, Pencil, Plus, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { DeudaDialog } from '@/components/DeudaDialog'
@@ -81,6 +81,9 @@ export default function Deudas() {
                         <Button variant="ghost" size="icon" className="size-8 text-positive" aria-label={`Cobrar a ${d.persona}`} onClick={() => setDialog({ modo: 'cobrar', deuda: d })}>
                           <Check />
                         </Button>
+                        <Button variant="ghost" size="icon" className="size-8" aria-label={`Editar deuda de ${d.persona}`} onClick={() => setDialog({ modo: 'editar', deuda: d })}>
+                          <Pencil />
+                        </Button>
                         <Button variant="ghost" size="icon" className="size-8" aria-label={`Eliminar deuda de ${d.persona}`} onClick={() => setPorEliminar(d)}>
                           <Trash2 />
                         </Button>
@@ -137,6 +140,7 @@ export default function Deudas() {
         abonado={dialog?.deuda ? (abonosPorDeuda[dialog.deuda.id] || 0) : 0}
         onPrestar={(datos) => actions.prestar(datos)}
         onCobrar={(id, billetera, fecha, monto) => actions.cobrar(id, billetera, fecha, monto)}
+        onEditar={(id, datos) => actions.editarDeuda(id, datos)}
       />
 
       <ConfirmDialog

@@ -102,6 +102,21 @@ export function FinanceProvider({ children }) {
       aplicarRecurrente: (recurrente, mes) => agregarItem('movimientos', movimientoDesdeRecurrente(recurrente, estadoRef.current.anio, mes)),
       omitir: (mes, id) => ejecutar({ type: 'omitir', mes, id }, () => repo.omitir(estadoRef.current.anio, mes, id)),
       reordenar: (actualizaciones) => ejecutar({ type: 'reordenar', actualizaciones }, () => repo.reordenarCategorias(actualizaciones)),
+      editarDeuda: (id, datos) => {
+        const movOriginal = estadoRef.current.movimientos.find((m) => m.deudaId === id && m.tipo === 'Egreso')
+        const datosDeuda = { persona: datos.persona, valor: datos.valor, billeteraId: datos.billeteraId, concepto: datos.concepto, fecha: datos.fecha }
+        const accs = [{ type: 'editar', lista: 'deudas', id, datos: datosDeuda }]
+        if (movOriginal) {
+          const datosMov = { valor: datos.valor, billeteraId: datos.billeteraId, fecha: datos.fecha, concepto: datos.concepto || `Préstamo a ${datos.persona}` }
+          accs.push({ type: 'editar', lista: 'movimientos', id: movOriginal.id, datos: datosMov })
+        }
+        ejecutar(accs, () => {
+          const p = repo.actualizar('deudas', id, datosDeuda)
+          return movOriginal
+            ? p.then(() => repo.actualizar('movimientos', movOriginal.id, { valor: datos.valor, billeteraId: datos.billeteraId, fecha: datos.fecha, concepto: datos.concepto || `Préstamo a ${datos.persona}` }))
+            : p
+        })
+      },
       prestar: (datos) => {
         const deuda = { id: crypto.randomUUID(), ...datos, pagada: false }
         const movimiento = nuevoItem('movimientos', {
