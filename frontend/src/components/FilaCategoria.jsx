@@ -4,11 +4,12 @@ import { Money } from '@/components/Money'
 import { MoneyInput } from '@/components/MoneyInput'
 import { Progreso } from '@/components/Progreso'
 import { avance } from '@/lib/calc'
-import { useFormatoMoneda } from '@/lib/privado'
+import { useFormatoMoneda, usePrivado } from '@/lib/privado'
 import { cn } from '@/lib/utils'
 
 export function FilaCategoria({ ref, categoria, proyectado, real, onProyectado, porcentajeIngreso, acciones, dragHandleProps, className, style, children }) {
   const formatCOP = useFormatoMoneda()
+  const privado = usePrivado()
   const egreso = categoria.tipo === 'Egreso'
   const excede = egreso && real > proyectado
   const restante = proyectado - real
@@ -40,7 +41,7 @@ export function FilaCategoria({ ref, categoria, proyectado, real, onProyectado, 
         <div className="mt-1.5 flex justify-between gap-3 text-xs text-muted-foreground">
           <span>
             <Money value={real} className="font-semibold text-foreground" /> {egreso ? 'gastado' : 'recibido'}
-            {porcentajeIngreso != null && <span className="ml-1 text-muted-foreground/70">· {porcentajeIngreso}% del ingreso</span>}
+            {porcentajeIngreso != null && !privado && <span className="ml-1 text-muted-foreground/70">· {porcentajeIngreso}% del ingreso</span>}
           </span>
           <span className={cn(excede && 'font-semibold text-negative')}>{detalle}</span>
         </div>
