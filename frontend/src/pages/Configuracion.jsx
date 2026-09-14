@@ -10,6 +10,7 @@ import { PageHeader } from '@/components/PageHeader'
 import { Panel } from '@/components/Panel'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { exportarExcel } from '@/lib/excel'
 import { fechaLarga, hoy } from '@/lib/format'
 import { guardarTema, useTema } from '@/lib/tema'
 import { cn } from '@/lib/utils'
@@ -232,23 +233,26 @@ function Apariencia() {
 function Datos() {
   const { state } = useFinance()
   const [borrando, setBorrando] = useState(false)
-  const descargar = () => {
-    const { categorias, billeteras, movimientos, presupuestos, saldos, recurrentes, metas } = state
-    const contenido = JSON.stringify({ exportadoEn: hoy(), categorias, billeteras, movimientos, presupuestos, saldos, recurrentes, metas }, null, 2)
-    const url = URL.createObjectURL(new Blob([contenido], { type: 'application/json' }))
-    const enlace = Object.assign(document.createElement('a'), { href: url, download: `fluvi-copia-${hoy()}.json` })
-    enlace.click()
-    URL.revokeObjectURL(url)
+  const [exportando, setExportando] = useState(false)
+  const descargar = async () => {
+    setExportando(true)
+    try {
+      await exportarExcel(state, state.anio)
+    } catch {
+      toast.error('No se pudo generar el archivo.')
+    } finally {
+      setExportando(false)
+    }
   }
   const total = state.movimientos.length
   return (
     <>
       <Panel title="Copia de seguridad">
         <p className="text-sm text-muted-foreground">
-          Descarga todos tus datos en un archivo JSON: {state.categorias.length} categorías, {state.billeteras.length} billeteras y {total} {total === 1 ? 'movimiento' : 'movimientos'}. Guárdalo donde quieras; tus datos siempre son tuyos.
+          Descarga tus datos del {state.anio} en un Excel con la misma estructura de tu archivo de finanzas (Ingresos, Egresos, Caja, Registros): {state.categorias.length} categorías, {state.billeteras.length} billeteras y {total} {total === 1 ? 'movimiento' : 'movimientos'}.
         </p>
-        <Button variant="secondary" className="mt-4" onClick={descargar}>
-          <Download /> Descargar copia
+        <Button variant="secondary" className="mt-4" onClick={descargar} disabled={exportando}>
+          {exportando ? <LoaderCircle className="animate-spin" aria-hidden="true" /> : <Download />} Descargar Excel {state.anio}
         </Button>
       </Panel>
       <Panel title="Borrar todos mis datos">
