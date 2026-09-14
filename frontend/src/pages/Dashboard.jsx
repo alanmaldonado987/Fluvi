@@ -16,8 +16,8 @@ import { NotasMes } from '@/components/NotasMes'
 import { Recordatorios } from '@/components/Recordatorios'
 import { StatCard } from '@/components/StatCard'
 import { buttonVariants } from '@/components/ui/button'
-import { avance, clave, describirMovimiento, distribucionEgresos, nombreBilletera, excedidas, flujoAnio, flujoMes, movimientosDe, progresoMeta, saldoVivoBilletera, saldoVivoBilleteras, serieAnual, totales, totalesFilas } from '@/lib/calc'
-import { anioDe, MESES } from '@/lib/format'
+import { avance, clave, describirMovimiento, distribucionEgresos, esMesUnico, nombreBilletera, excedidas, flujoAnio, flujoMes, flujoMulti, movsFiltrados, progresoMeta, saldoVivoBilletera, saldoVivoBilleteras, serieAnual, totales, totalesFilas } from '@/lib/calc'
+import { anioDe, etiquetaPeriodo, MESES } from '@/lib/format'
 import { useFormatoMoneda } from '@/lib/privado'
 import { iconoBilletera } from '@/lib/iconos'
 import { entrada, escalonado } from '@/lib/motion'
@@ -67,9 +67,10 @@ export default function Dashboard() {
   const navigate = useNavigate()
   const { anio, mes } = state
   const anual = mes === null
-  const movs = anual ? state.movimientos.filter((m) => anioDe(m.fecha) === anio) : movimientosDe(state.movimientos, anio, mes)
+  const unico = esMesUnico(mes)
+  const movs = movsFiltrados(state.movimientos, anio, mes)
   const { ingresos, egresos, neto } = totales(movs)
-  const flujo = anual ? flujoAnio(state) : flujoMes(state, mes)
+  const flujo = anual ? flujoAnio(state) : unico ? flujoMes(state, mes) : flujoMulti(state, mes)
   const filasEgresos = flujo.egresos
   const te = totalesFilas(filasEgresos)
   const destacadas = filasEgresos
@@ -82,16 +83,16 @@ export default function Dashboard() {
     .slice(0, 5)
   const mapa = new Map(state.categorias.map((c) => [c.id, c]))
   const distribucion = distribucionEgresos(state, movs)
-  const mesVivo = anual ? new Date().getMonth() : mes
+  const mesVivo = unico ? mes : Array.isArray(mes) ? Math.max(...mes) : new Date().getMonth()
   const billeteras = state.billeteras.map((b) => ({ ...b, saldo: saldoVivoBilletera(state, mesVivo, b.id) }))
   const sinConfigurar = state.categorias.length === 0 && state.billeteras.length === 0
   const tasaAhorro = ingresos ? Math.round((neto / ingresos) * 100) : null
   const cuentaIngresos = movs.filter((m) => m.tipo === 'Ingreso').length
-  const etiquetaPeriodo = anual ? String(anio) : MESES[mes].toLowerCase()
+  const etiqueta = etiquetaPeriodo(mes, anio)
 
   return (
     <div className="grid gap-5">
-      <PageHeader title="Inicio" description={anual ? `${anio} de un vistazo.` : `${MESES[mes]} ${anio} de un vistazo.`}>
+      <PageHeader title="Inicio" description={`${etiqueta} de un vistazo.`}>
         <PeriodoPicker />
         {state.categorias.length ? (
           <Link to="/movimientos" state={{ nuevo: true }} className={cn(buttonVariants(), 'hidden md:inline-flex')}>
@@ -115,9 +116,9 @@ export default function Dashboard() {
         <>
           <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
             <StatCard destacado label="Saldo en billeteras" value={saldoVivoBilleteras(state, mesVivo)} hint={`${billeteras.length} ${billeteras.length === 1 ? 'billetera' : 'billeteras'}`} className={entrada} style={escalonado(0)} />
-            <StatCard label={anual ? 'Ingresos del año' : 'Ingresos del mes'} value={ingresos} tone="positive" hint={`${cuentaIngresos} ${cuentaIngresos === 1 ? 'registrado' : 'registrados'}`} className={entrada} style={escalonado(1)} />
-            <StatCard label={anual ? 'Egresos del año' : 'Egresos del mes'} value={egresos} hint={te.proyectado ? `${Math.round(avance(te.proyectado, te.real) * 100)}% del presupuesto` : 'Sin presupuesto definido'} className={entrada} style={escalonado(2)} />
-            <StatCard label="Ahorro neto" value={neto} tone={neto < 0 ? 'negative' : 'positive'} hint={tasaAhorro == null ? (anual ? 'Sin ingresos este año' : 'Sin ingresos este mes') : `${tasaAhorro}% de los ingresos`} className={entrada} style={escalonado(3)} />
+            <StatCard label="Ingresos" value={ingresos} tone="positive" hint={`${cuentaIngresos} ${cuentaIngresos === 1 ? 'registrado' : 'registrados'}`} className={entrada} style={escalonado(1)} />
+            <StatCard label="Egresos" value={egresos} hint={te.proyectado ? `${Math.round(avance(te.proyectado, te.real) * 100)}% del presupuesto` : 'Sin presupuesto definido'} className={entrada} style={escalonado(2)} />
+            <StatCard label="Ahorro neto" value={neto} tone={neto < 0 ? 'negative' : 'positive'} hint={tasaAhorro == null ? 'Sin ingresos' : `${tasaAhorro}% de los ingresos`} className={entrada} style={escalonado(3)} />
           </div>
 
           {usuario.preferencias.alertasPresupuesto ? <Alertas lista={excedidas(filasEgresos)} hayMovimientos={movs.length > 0} /> : null}
@@ -158,7 +159,7 @@ export default function Dashboard() {
               </div>
             </Panel>
             <Panel
-              title={`Presupuesto de ${etiquetaPeriodo}`}
+              title={`Presupuesto de ${etiqueta}`}
               action={
                 <Link to="/presupuesto" className={enlace}>
                   Ver todo
@@ -182,7 +183,7 @@ export default function Dashboard() {
           </div>
 
           <div className="grid gap-5 lg:grid-cols-2 xl:grid-cols-3">
-            <Panel title={`Egresos de ${etiquetaPeriodo}`}>
+            <Panel title={`Egresos de ${etiqueta}`}>
               {distribucion.length ? <BarrasCategorias datos={distribucion} /> : <p className="text-sm text-muted-foreground">Aún no hay egresos este mes.</p>}
             </Panel>
             <Panel

@@ -21,8 +21,8 @@ import { StatCard } from '@/components/StatCard'
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { avance, describirCategoria, desglose, flujoAnio, flujoMes, progresoMeta, totalesFilas } from '@/lib/calc'
-import { fechaCorta, MESES } from '@/lib/format'
+import { avance, describirCategoria, desglose, esMesUnico, flujoAnio, flujoMes, flujoMulti, progresoMeta, totalesFilas } from '@/lib/calc'
+import { etiquetaPeriodo, fechaCorta, MESES } from '@/lib/format'
 import { useFormatoMoneda } from '@/lib/privado'
 import { entrada, escalonado } from '@/lib/motion'
 import { cn } from '@/lib/utils'
@@ -201,8 +201,9 @@ export default function Presupuesto() {
   const [confirmando, setConfirmando] = useState(false)
   const { mes } = state
   const anual = mes === null
+  const unico = esMesUnico(mes)
   const egreso = tipo === 'Egreso'
-  const flujo = anual ? flujoAnio(state) : flujoMes(state, mes)
+  const flujo = anual ? flujoAnio(state) : unico ? flujoMes(state, mes) : flujoMulti(state, mes)
   const filas = egreso ? flujo.egresos : flujo.ingresos
   const t = totalesFilas(filas)
   const porcentaje = Math.round(avance(t.proyectado, t.real) * 100)
@@ -261,13 +262,13 @@ export default function Presupuesto() {
           ) : (
             <>
           <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-            <StatCard label={anual ? `Proyectado en ${state.anio}` : `Proyectado en ${MESES[mes].toLowerCase()}`} value={t.proyectado} />
+            <StatCard label={`Proyectado en ${etiquetaPeriodo(mes, state.anio).toLowerCase()}`} value={t.proyectado} />
             <StatCard label={egreso ? 'Gastado' : 'Recibido'} value={t.real} tone={egreso && t.real > t.proyectado ? 'negative' : 'positive'} hint={`${porcentaje}% de lo proyectado`} />
             <StatCard label={egreso ? 'Disponible' : 'Pendiente por recibir'} value={Math.max(t.diferencia, 0)} tone={egreso && t.diferencia < 0 ? 'negative' : undefined} hint={egreso && t.diferencia < 0 ? 'Presupuesto agotado' : undefined} />
             <StatCard label={egreso ? 'Categorías excedidas' : 'Categorías completas'} value={`${cumplidas} de ${filas.length}`} />
           </div>
           <div className="grid gap-5 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-            <Panel title={`Categorías de ${tipo.toLowerCase()}`} action={<p className="hidden text-xs text-muted-foreground md:block">{anual ? 'Suma de los 12 meses' : 'Edita el valor proyectado en cada fila'}</p>}>
+            <Panel title={`Categorías de ${tipo.toLowerCase()}`} action={<p className="hidden text-xs text-muted-foreground md:block">{unico ? 'Edita el valor proyectado en cada fila' : 'Suma de los meses seleccionados'}</p>}>
               {filas.length ? (
                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                   <SortableContext items={filas.map((f) => f.id)} strategy={rectSortingStrategy}>
@@ -282,7 +283,7 @@ export default function Presupuesto() {
                             categoria={f}
                             proyectado={f.proyectado}
                             real={f.real}
-                            onProyectado={anual ? undefined : (valor) => actions.setPresupuesto(mes, f.id, valor)}
+                            onProyectado={unico ? (valor) => actions.setPresupuesto(mes, f.id, valor) : undefined}
                             className={entrada}
                             estiloBase={escalonado(i)}
                             acciones={

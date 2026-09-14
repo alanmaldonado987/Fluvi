@@ -3,8 +3,16 @@ import { anioDe, fechaIso, fechaLarga, hoy, mesDe } from './format'
 export const clave = (anio, mes, id) => `${anio}-${mes}-${id}`
 export const idDeClave = (k) => k.split('-').slice(2).join('-')
 
+export const esMesUnico = (mes) => typeof mes === 'number'
+
 export const movimientosDe = (movimientos, anio, mes) =>
   movimientos.filter((m) => anioDe(m.fecha) === anio && mesDe(m.fecha) === mes)
+
+export const movsFiltrados = (movimientos, anio, mes) => {
+  if (mes === null) return movimientos.filter((m) => anioDe(m.fecha) === anio)
+  if (Array.isArray(mes)) return movimientos.filter((m) => anioDe(m.fecha) === anio && mes.includes(mesDe(m.fecha)))
+  return movimientosDe(movimientos, anio, mes)
+}
 
 export function totales(movs) {
   let ingresos = 0
@@ -26,7 +34,7 @@ export function describirCategoria(mapa, id) {
   return padre ? { etiqueta: `${padre.nombre} / ${c.nombre}`, icono: padre.nombre } : { etiqueta: c.nombre, icono: c.nombre }
 }
 
-export const nombreBilletera = (billeteras, id) => billeteras.find((b) => b.id === id)?.nombre ?? 'Sin billetera'
+export const nombreBilletera = (billeteras, id) => billeteras.find((b) => b.id === id)?.nombre ?? 'Billetera eliminada'
 
 export function describirMovimiento(mapa, billeteras, m) {
   if (m.tipo !== 'Transferencia') return describirCategoria(mapa, m.categoriaId)
@@ -56,7 +64,7 @@ export function realPorCategoria(movs, categorias) {
 
 export function desglose(state, mes, padreId) {
   const porId = new Map()
-  for (const m of movimientosDe(state.movimientos, state.anio, mes)) porId.set(m.categoriaId, (porId.get(m.categoriaId) || 0) + m.valor)
+  for (const m of movsFiltrados(state.movimientos, state.anio, mes)) porId.set(m.categoriaId, (porId.get(m.categoriaId) || 0) + m.valor)
   const filas = state.categorias.filter((c) => c.padreId === padreId).map((c) => ({ ...c, valor: porId.get(c.id) || 0 }))
   const directo = porId.get(padreId) || 0
   return directo ? [...filas, { id: null, nombre: 'Sin subcategoría', valor: directo }] : filas
@@ -117,6 +125,23 @@ export function flujoAnio(state) {
     ingresos: filas.filter((f) => f.tipo === 'Ingreso'),
     egresos: filas.filter((f) => f.tipo === 'Egreso'),
     saldoInicial: saldoInicial(state, 0),
+  }
+}
+
+export function flujoMulti(state, meses) {
+  const { categorias, presupuestos, anio } = state
+  const arr = Array.isArray(meses) ? meses : [meses]
+  const real = realPorCategoria(movsFiltrados(state.movimientos, anio, meses), categorias)
+  const filas = principales(categorias).map((c) => {
+    let proyectado = 0
+    for (const m of arr) proyectado += presupuestos[clave(anio, m, c.id)] || 0
+    const r = real.get(c.id) || 0
+    return { ...c, proyectado, real: r, diferencia: proyectado - r }
+  })
+  return {
+    ingresos: filas.filter((f) => f.tipo === 'Ingreso'),
+    egresos: filas.filter((f) => f.tipo === 'Egreso'),
+    saldoInicial: saldoInicial(state, Math.min(...arr)),
   }
 }
 
@@ -210,7 +235,7 @@ export function recordatorios(state, preferencias) {
     const texto = dias > 31 ? `No registras movimientos desde el ${fechaLarga(ultima).toLowerCase()} de ${ultima.slice(0, 4)}.` : `Llevas ${dias} ${dias === 1 ? 'día' : 'días'} sin registrar movimientos.`
     lista.push({ id: 'sin-registrar', texto, ruta: '/movimientos' })
   }
-  if (state.anio !== ahora.getFullYear() || state.mes !== ahora.getMonth()) return lista
+  if (state.anio !== ahora.getFullYear() || !esMesUnico(state.mes) || state.mes !== ahora.getMonth()) return lista
   const restantes = diasEnMes(state.anio, state.mes) - ahora.getDate()
   const plazo = restantes === 1 ? 'queda 1 día' : `quedan ${restantes} días`
   for (const f of flujoMes(state, state.mes).egresos) {

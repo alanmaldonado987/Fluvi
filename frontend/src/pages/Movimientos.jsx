@@ -18,8 +18,8 @@ import { SelectField } from '@/components/SelectField'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { describirMovimiento, distribucionEgresos, indicePadres, movimientosDe, nombreBilletera, principales, totales } from '@/lib/calc'
-import { anioDe, diasAtras, fechaLarga, hoy, MESES, mesDe } from '@/lib/format'
+import { describirMovimiento, distribucionEgresos, esMesUnico, indicePadres, movsFiltrados, nombreBilletera, principales, totales } from '@/lib/calc'
+import { anioDe, diasAtras, etiquetaPeriodo, fechaLarga, hoy, MESES, mesDe } from '@/lib/format'
 import { useFormatoMoneda } from '@/lib/privado'
 import { entrada, escalonado } from '@/lib/motion'
 import { cn } from '@/lib/utils'
@@ -113,8 +113,9 @@ export default function Movimientos() {
   ]
   const billeteras = [{ value: 'todas', label: 'Todas las billeteras' }, ...state.billeteras.map((b) => ({ value: b.id, label: b.nombre }))]
   const texto = filtro.texto.trim().toLowerCase()
+  const unico = esMesUnico(state.mes)
   const anual = state.mes === null || filtro.alcance === 'anio'
-  const base = anual ? state.movimientos.filter((m) => anioDe(m.fecha) === state.anio) : movimientosDe(state.movimientos, state.anio, state.mes)
+  const base = anual ? state.movimientos.filter((m) => anioDe(m.fecha) === state.anio) : movsFiltrados(state.movimientos, state.anio, state.mes)
   const coincideTexto = (m) => !texto || [m.concepto, m.observacion, String(m.valor), describir(m).etiqueta, billeteraDe(m) ?? ''].some((t) => t.toLowerCase().includes(texto))
   const lista = base
     .filter(
@@ -144,7 +145,7 @@ export default function Movimientos() {
     else actions.agregar('movimientos', datos)
     const anio = anioDe(datos.fecha)
     const mes = mesDe(datos.fecha)
-    if (anio !== state.anio || (!anual && state.mes !== null && mes !== state.mes)) {
+    if (anio !== state.anio || (unico && mes !== state.mes)) {
       actions.setPeriodo({ anio, mes })
       toast.info(`Guardado en ${MESES[mes].toLowerCase()} de ${anio}. Te llevamos a ese mes.`)
     }
@@ -157,7 +158,7 @@ export default function Movimientos() {
 
   return (
     <div className="grid gap-5">
-      <PageHeader title="Movimientos" description={anual ? `Todo ${state.anio}` : `${MESES[state.mes]} ${state.anio}`} >
+      <PageHeader title="Movimientos" description={etiquetaPeriodo(state.mes, state.anio)} >
         <PeriodoPicker />
         <Link to="/importar" data-tour="importar" className={cn(buttonVariants({ variant: 'outline' }), 'hidden md:inline-flex')}>
           <FileSpreadsheet /> Importar Excel
@@ -183,7 +184,7 @@ export default function Movimientos() {
           <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
           <Input type="search" aria-label="Buscar" className="bg-card pl-9" placeholder="Buscar por concepto, categoría o valor" value={filtro.texto} onChange={(e) => cambiar({ texto: e.target.value })} />
         </div>
-        {state.mes !== null ? <SelectField aria-label="Alcance" className="md:w-40" value={filtro.alcance} onChange={(alcance) => cambiar({ alcance })} items={alcances} /> : null}
+        {unico ? <SelectField aria-label="Alcance" className="md:w-40" value={filtro.alcance} onChange={(alcance) => cambiar({ alcance })} items={alcances} /> : null}
         {filtrado ? (
           <Button variant="ghost" size="sm" onClick={limpiar}>
             <X /> Limpiar
@@ -236,7 +237,7 @@ export default function Movimientos() {
           ) : (
             <EmptyState
               icon={ArrowLeftRight}
-              title={base.length ? 'Nada coincide con los filtros' : `Sin movimientos en ${anual ? state.anio : MESES[state.mes].toLowerCase()}`}
+              title={base.length ? 'Nada coincide con los filtros' : `Sin movimientos en ${etiquetaPeriodo(state.mes, state.anio).toLowerCase()}`}
               description={base.length ? 'Prueba con otra búsqueda o quita los filtros.' : hayCategorias ? 'Registra un ingreso, un egreso o una transferencia para verlo aquí.' : 'Primero crea tus categorías en Presupuesto.'}
             >
               {base.length ? (
@@ -255,7 +256,7 @@ export default function Movimientos() {
             </EmptyState>
           )}
         </div>
-        <Resumen titulo={anual ? 'Resumen del año' : 'Resumen del mes'} movs={base} distribucion={distribucionEgresos(state, base)} />
+        <Resumen titulo={`Resumen de ${etiquetaPeriodo(state.mes, state.anio).toLowerCase()}`} movs={base} distribucion={distribucionEgresos(state, base)} />
       </div>
 
       {hayCategorias ? <BotonFlotante label="Nuevo movimiento" onClick={() => abrir(null)} /> : null}

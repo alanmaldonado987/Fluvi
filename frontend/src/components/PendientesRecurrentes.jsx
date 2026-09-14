@@ -2,7 +2,7 @@ import { CategoriaIcono } from '@/components/CategoriaIcono'
 import { Money } from '@/components/Money'
 import { Panel } from '@/components/Panel'
 import { Button } from '@/components/ui/button'
-import { describirCategoria, pendientes } from '@/lib/calc'
+import { describirCategoria, esMesUnico, pendientes } from '@/lib/calc'
 import { MESES } from '@/lib/format'
 import { entrada, escalonado } from '@/lib/motion'
 import { cn } from '@/lib/utils'
@@ -10,7 +10,7 @@ import { useFinance } from '@/store/context'
 
 export function PendientesRecurrentes({ className }) {
   const { state, actions } = useFinance()
-  if (state.mes === null) return null
+  if (!esMesUnico(state.mes)) return null
   const lista = pendientes(state, state.mes)
   if (!lista.length) return null
   const mapa = new Map(state.categorias.map((c) => [c.id, c]))

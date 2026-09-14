@@ -9,8 +9,8 @@ import { Panel } from '@/components/Panel'
 import { PeriodoPicker } from '@/components/PeriodPickers'
 import { StatCard } from '@/components/StatCard'
 import { buttonVariants } from '@/components/ui/button'
-import { flujoAnio, flujoMes, serieSaldos, totalesFilas } from '@/lib/calc'
-import { MESES } from '@/lib/format'
+import { esMesUnico, flujoAnio, flujoMes, flujoMulti, serieSaldos, totalesFilas } from '@/lib/calc'
+import { etiquetaPeriodo } from '@/lib/format'
 import { entrada, escalonado } from '@/lib/motion'
 import { cn } from '@/lib/utils'
 import { useFinance } from '@/store/context'
@@ -39,11 +39,12 @@ function Seccion({ titulo, filas, totales, columnas = false }) {
 export default function FlujoCaja() {
   const { state } = useFinance()
   const anual = state.mes === null
-  const { ingresos, egresos, saldoInicial } = anual ? flujoAnio(state) : flujoMes(state, state.mes)
+  const unico = esMesUnico(state.mes)
+  const { ingresos, egresos, saldoInicial } = anual ? flujoAnio(state) : unico ? flujoMes(state, state.mes) : flujoMulti(state, state.mes)
   const ti = totalesFilas(ingresos)
   const te = totalesFilas(egresos)
   const saldoFinal = saldoInicial + ti.real - te.real
-  const descripcion = anual ? `Todo ${state.anio}` : `Cómo se mueve tu dinero durante el mes.`
+  const descripcion = unico ? 'Cómo se mueve tu dinero durante el mes.' : etiquetaPeriodo(state.mes, state.anio)
 
   return (
     <div className="grid gap-5">

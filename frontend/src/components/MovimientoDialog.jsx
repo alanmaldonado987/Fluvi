@@ -23,6 +23,8 @@ function Formulario({ inicial, onGuardar, onEliminar }) {
   const set = (campo) => (valor) => setDatos((d) => ({ ...d, [campo]: valor }))
   const transferencia = datos.tipo === 'Transferencia'
   const billeteras = state.billeteras.map((b) => ({ value: b.id, label: b.nombre }))
+  if (inicial?.billeteraId && !billeteras.some((b) => b.value === inicial.billeteraId)) billeteras.unshift({ value: inicial.billeteraId, label: 'Billetera eliminada' })
+  if (inicial?.destinoId && !billeteras.some((b) => b.value === inicial.destinoId)) billeteras.unshift({ value: inicial.destinoId, label: 'Billetera eliminada' })
   const mismaBilletera = transferencia && datos.billeteraId && datos.billeteraId === datos.destinoId
   const valido = datos.valor > 0 && datos.fecha && (transferencia ? datos.billeteraId && datos.destinoId && !mismaBilletera : datos.categoriaId)
 

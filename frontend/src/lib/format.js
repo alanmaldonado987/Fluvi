@@ -1,6 +1,12 @@
 export const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
 export const MESES_CORTO = MESES.map((m) => m.slice(0, 3))
 
+export function etiquetaPeriodo(mes, anio) {
+  if (mes === null) return `Todo ${anio}`
+  if (Array.isArray(mes)) return `${mes.map((m) => MESES_CORTO[m]).join(', ')} ${anio}`
+  return `${MESES[mes]} ${anio}`
+}
+
 const cop = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0, maximumFractionDigits: 0 })
 export const formatCOP = (valor) => cop.format(valor || 0).replace(/\s/g, '')
 
