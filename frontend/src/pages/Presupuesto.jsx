@@ -205,6 +205,7 @@ export default function Presupuesto() {
   const egreso = tipo === 'Egreso'
   const flujo = anual ? flujoAnio(state) : unico ? flujoMes(state, mes) : flujoMulti(state, mes)
   const filas = egreso ? flujo.egresos : flujo.ingresos
+  const totalIngresos = totalesFilas(flujo.ingresos).proyectado
   const t = totalesFilas(filas)
   const porcentaje = Math.round(avance(t.proyectado, t.real) * 100)
   const cumplidas = filas.filter((f) => (egreso ? f.real > f.proyectado : f.proyectado && f.real >= f.proyectado)).length
@@ -283,6 +284,7 @@ export default function Presupuesto() {
                             categoria={f}
                             proyectado={f.proyectado}
                             real={f.real}
+                            porcentajeIngreso={totalIngresos > 0 && f.proyectado > 0 ? Math.round((f.proyectado / totalIngresos) * 100 * 10) / 10 : undefined}
                             onProyectado={unico ? (valor) => actions.setPresupuesto(mes, f.id, valor) : undefined}
                             className={entrada}
                             estiloBase={escalonado(i)}
