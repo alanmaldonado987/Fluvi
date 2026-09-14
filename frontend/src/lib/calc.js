@@ -37,8 +37,9 @@ export function describirCategoria(mapa, id) {
 export const nombreBilletera = (billeteras, id) => billeteras.find((b) => b.id === id)?.nombre ?? 'Billetera eliminada'
 
 export function describirMovimiento(mapa, billeteras, m) {
-  if (m.tipo !== 'Transferencia') return describirCategoria(mapa, m.categoriaId)
-  return { etiqueta: `${nombreBilletera(billeteras, m.billeteraId)} → ${nombreBilletera(billeteras, m.destinoId)}`, icono: 'transferencia' }
+  if (m.tipo === 'Transferencia') return { etiqueta: `${nombreBilletera(billeteras, m.billeteraId)} → ${nombreBilletera(billeteras, m.destinoId)}`, icono: 'transferencia' }
+  if (m.deudaId) return { etiqueta: m.tipo === 'Egreso' ? 'Préstamo' : 'Cobro de deuda', icono: 'deuda' }
+  return describirCategoria(mapa, m.categoriaId)
 }
 
 export function actividadBilletera(movs, id) {

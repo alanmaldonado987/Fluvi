@@ -1,4 +1,4 @@
-import { Banknote, Brain, Briefcase, Bus, Cat, Clapperboard, CreditCard, Gift, House, Landmark, Package, PartyPopper, PiggyBank, Plane, Receipt, ShoppingBasket, Smartphone, Tag, TrendingUp, Wallet } from 'lucide-react'
+import { Banknote, Brain, Briefcase, Bus, Cat, Clapperboard, CreditCard, Gift, HandCoins, House, Landmark, Package, PartyPopper, PiggyBank, Plane, Receipt, ShoppingBasket, Smartphone, Tag, TrendingUp, Wallet } from 'lucide-react'
 
 const tamano = 'size-5'
 
@@ -18,6 +18,7 @@ const categorias = [
   [/prima|bono|regalo/, <Gift className={tamano} />],
   [/cesant|ahorro|fondo/, <PiggyBank className={tamano} />],
   [/otro/, <Package className={tamano} />],
+  [/deuda|pr[eé]stamo|cobro/, <HandCoins className={tamano} />],
 ]
 
 const billeteras = [
