@@ -22,10 +22,16 @@ export function FinanceProvider({ children }) {
   useEffect(() => {
     if (!usuario) return undefined
     let vigente = true
-    repo
-      .cargarTodo()
-      .then((datos) => vigente && dispatch({ type: 'cargar', datos }))
-      .catch(() => toast.error('No se pudieron cargar tus datos. Revisa la conexión y recarga la página.'))
+    const cargar = (intento = 0) =>
+      repo
+        .cargarTodo()
+        .then((datos) => vigente && dispatch({ type: 'cargar', datos }))
+        .catch((err) => {
+          if (!vigente) return
+          if (intento < 2) setTimeout(() => vigente && cargar(intento + 1), 1500)
+          else toast.error('No se pudieron cargar tus datos. Revisa la conexión y recarga la página.')
+        })
+    cargar()
     return () => {
       vigente = false
     }
