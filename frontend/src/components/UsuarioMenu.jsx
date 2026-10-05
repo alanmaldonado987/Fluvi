@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { CerrarSesionDialog } from '@/components/CerrarSesionDialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
+import { VERSION } from '@/lib/version'
 import { useAuth } from '@/store/auth'
 
 const iniciales = (nombre) =>
@@ -48,6 +49,12 @@ export function UsuarioMenu({ compacto = false, side = compacto ? 'bottom' : 'to
           <DropdownMenuItem variant="destructive" onClick={() => setConfirmando(true)}>
             <LogOut /> Cerrar sesión
           </DropdownMenuItem>
+          {VERSION ? (
+            <>
+              <DropdownMenuSeparator />
+              <p className="px-2 py-1 text-xs text-muted-foreground">Fluvi v{VERSION}</p>
+            </>
+          ) : null}
         </DropdownMenuContent>
       </DropdownMenu>
       <CerrarSesionDialog open={confirmando} onOpenChange={setConfirmando} />

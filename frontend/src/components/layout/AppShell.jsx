@@ -8,6 +8,7 @@ import { UsuarioMenu } from '@/components/UsuarioMenu'
 import { entradaPagina } from '@/lib/motion'
 import { alternarPrivado, usePrivado } from '@/lib/privado'
 import { cn } from '@/lib/utils'
+import { VERSION } from '@/lib/version'
 import { useAuth } from '@/store/auth'
 
 const rutas = [
@@ -93,6 +94,7 @@ export function AppShell() {
         </nav>
         <div className={cn('mt-auto w-full border-t pt-3', colapsado && 'flex justify-center')}>
           <UsuarioMenu compacto={colapsado} side={colapsado ? 'right' : 'top'} onTutorial={() => setTutorial(true)} />
+          {VERSION ? <p className={cn('mt-2 text-[11px] text-muted-foreground', colapsado ? 'text-center' : 'px-2')}>{colapsado ? `v${VERSION}` : `Versión ${VERSION}`}</p> : null}
         </div>
       </aside>
 

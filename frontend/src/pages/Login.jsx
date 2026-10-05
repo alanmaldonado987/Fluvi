@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { entrada } from '@/lib/motion'
 import { cn } from '@/lib/utils'
+import { VERSION } from '@/lib/version'
 import { useAuth } from '@/store/auth'
 
 const mensajes = {
@@ -35,6 +36,7 @@ export default function Login() {
   const [verClave, setVerClave] = useState(false)
   const [enviando, setEnviando] = useState(false)
   const [aviso, setAviso] = useState(null)
+  const [sinMovimiento] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches)
 
   if (usuario) return <Navigate to="/" replace />
   const t = textos[modo]
@@ -68,17 +70,23 @@ export default function Login() {
 
   return (
     <main className="grid min-h-svh lg:grid-cols-[1.1fr_1fr]">
-      <section className="relative hidden overflow-hidden bg-forest p-12 text-white lg:flex lg:flex-col">
-        <img src="/login.jpg" alt="" fetchPriority="high" className="absolute inset-0 size-full object-cover object-[20%_center] motion-safe:animate-acercar" />
-        <span aria-hidden="true" className="absolute inset-0 bg-linear-to-t from-forest via-forest/35 to-forest/10" />
-        <Logo className="relative text-white" />
+      <section className="relative hidden overflow-hidden bg-[#1d3f2c] p-12 text-white lg:flex lg:flex-col">
+        {/* Video de monedas llenando un frasco (Pexels, licencia libre). Con movimiento reducido queda la imagen fija. */}
+        {sinMovimiento ? (
+          <img src="/login-ahorro.jpg" alt="" fetchPriority="high" className="absolute inset-0 size-full object-cover object-[45%_center]" />
+        ) : (
+          <video src="/login-ahorro.mp4" poster="/login-ahorro.jpg" autoPlay muted loop playsInline preload="auto" aria-hidden="true" className="absolute inset-0 size-full object-cover object-[45%_center]" />
+        )}
+        <span aria-hidden="true" className="absolute inset-0 bg-[#1d3f2c]/25 mix-blend-multiply" />
+        <span aria-hidden="true" className="absolute inset-0 bg-linear-to-t from-[#1d3f2c] via-[#1d3f2c]/40 to-[#1d3f2c]/10" />
+        <Logo tono="oscuro" className="relative self-start" />
         <div className={cn('relative mt-auto max-w-md', entrada)} style={retraso(100)}>
           <p className="font-heading text-5xl leading-[1.05] font-bold tracking-tight text-balance">Tus finanzas, en flujo.</p>
           <p className="mt-4 text-lg text-white/80">Registra, planea y mira crecer tu ahorro.</p>
         </div>
       </section>
 
-      <section className="flex items-center justify-center p-6">
+      <section className="relative flex items-center justify-center p-6 pb-12">
         <form onSubmit={enviar} className={cn('w-full max-w-sm', entrada)} style={retraso(150)}>
           <Logo className="mb-8 lg:hidden" />
           <h1 className="text-2xl">{t.titulo}</h1>
@@ -146,6 +154,7 @@ export default function Login() {
             )}
           </p>
         </form>
+        {VERSION ? <p className="absolute inset-x-0 bottom-4 text-center text-xs text-muted-foreground">Fluvi v{VERSION}</p> : null}
       </section>
     </main>
   )

@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Marca Fluvi</title>
+<link rel="icon" type="image/svg+xml" href="fluvi-favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bosque: #244D35; --hoja: #2E7D55; --profundo: #1D3F2C; --menta: #DCEFE3; --cauce: #BFE3D2;
+    --dorado: #E9B949; --coral: #E2574C; --coral-texto: #C8322E;
+    --fondo: #F4F7F2; --texto: #1F1A17; --suave: #5B6B60; --linea: #DDE6E0; --tarjeta: #FFFFFF;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--fondo); color: var(--texto); font: 16px/1.55 Manrope, system-ui, sans-serif; }
+  main { max-width: 1080px; margin: 0 auto; padding: 48px 16px 80px; }
+  h1 { font-size: 2.4rem; line-height: 1.1; margin: 0 0 8px; color: var(--bosque); letter-spacing: -0.02em; }
+  h2 { font-size: 1.5rem; margin: 64px 0 6px; color: var(--bosque); letter-spacing: -0.01em; }
+  h3 { font-size: 1rem; margin: 0 0 8px; }
+  p { margin: 0 0 12px; max-width: 68ch; }
+  .lead { color: var(--suave); font-size: 1.1rem; }
+  .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); margin-top: 20px; }
+  .card { background: var(--tarjeta); border: 1px solid var(--linea); border-radius: 16px; overflow: hidden; }
+  .card .vista { display: grid; place-items: center; min-height: 180px; padding: 24px; }
+  .card .vista img { max-width: 100%; max-height: 140px; }
+  .card .pie { padding: 12px 16px; border-top: 1px solid var(--linea); font-size: .85rem; }
+  .card .pie code { color: var(--suave); font-size: .78rem; word-break: break-all; }
+  .oscuro { background: var(--profundo); }
+  .negro { background: #111614; }
+  .hero { display: grid; place-items: center; padding: 56px 16px; background: var(--tarjeta); border: 1px solid var(--linea); border-radius: 24px; margin-top: 24px; }
+  .hero img { width: min(520px, 100%); }
+  .tamanos { display: flex; flex-wrap: wrap; gap: 24px; align-items: end; }
+  .tamanos figure { margin: 0; text-align: center; font-size: .78rem; color: var(--suave); }
+  .tamanos figure img { display: block; margin: 0 auto 6px; }
+  .paleta { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); margin-top: 20px; }
+  .color { border-radius: 14px; overflow: hidden; border: 1px solid var(--linea); background: var(--tarjeta); }
+  .color .muestra { height: 88px; padding: 12px; font-weight: 800; display: flex; align-items: end; }
+  .color .datos { padding: 10px 12px; font-size: .82rem; }
+  .color .datos b { display: block; font-size: .92rem; }
+  .color .datos span { color: var(--suave); }
+  .reglas { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); margin-top: 20px; }
+  .zona { position: relative; display: inline-block; padding: 28px; outline: 1px dashed #2E7D5599; background: repeating-linear-gradient(45deg, #DCEFE355 0 6px, transparent 6px 12px); }
+  .zona img { display: block; height: 56px; background: var(--fondo); }
+  .mal { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .mal figure { margin: 0; background: var(--tarjeta); border: 1px solid var(--linea); border-radius: 12px; padding: 12px; font-size: .78rem; text-align: center; position: relative; }
+  .mal figure::after { content: ""; position: absolute; top: 8px; right: 8px; width: 18px; height: 18px; border-radius: 50%; background: var(--coral-texto) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18'%3E%3Cpath d='M6 6l6 6M12 6l-6 6' stroke='white' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E"); }
+  .mal img { height: 34px; max-width: 100%; display: block; margin: 8px auto; }
+  table { border-collapse: collapse; width: 100%; font-size: .88rem; margin-top: 12px; }
+  td, th { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--linea); }
+  th { color: var(--suave); font-weight: 600; }
+  .ok { color: #1F6B45; font-weight: 800; }
+  .no { color: var(--coral-texto); font-weight: 800; }
+  /* Vistas previas */
+  .previas { display: flex; flex-wrap: wrap; gap: 32px; margin-top: 24px; align-items: flex-start; }
+  .celular { width: 300px; height: 620px; border-radius: 44px; padding: 12px; background: #0d0f0e; box-shadow: 0 20px 50px #1d3f2c40; flex: none; }
+  .pantalla { position: relative; height: 100%; border-radius: 34px; overflow: hidden; background: linear-gradient(160deg, #6fa98a, #2b5a42 55%, #173325); color: #fff; padding: 46px 18px 0; }
+  .pantalla .hora { position: absolute; top: 14px; left: 28px; font-size: .8rem; font-weight: 800; }
+  .apps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px 10px; }
+  .app { text-align: center; font-size: .66rem; }
+  .app i { display: block; width: 54px; height: 54px; margin: 0 auto 5px; border-radius: 13px; background: #ffffff33; }
+  .app img { display: block; width: 54px; height: 54px; margin: 0 auto 5px; border-radius: 13px; box-shadow: 0 2px 8px #0004; }
+  .dock { position: absolute; left: 12px; right: 12px; bottom: 14px; display: flex; justify-content: space-around; padding: 12px; border-radius: 28px; background: #ffffff2e; }
+  .dock i { width: 50px; height: 50px; border-radius: 12px; background: #ffffff40; }
+  .login { flex: 1 1 560px; min-width: 0; display: grid; grid-template-columns: 1.1fr 1fr; min-height: 420px; border-radius: 20px; overflow: hidden; border: 1px solid var(--linea); background: var(--tarjeta); }
+  .login .panel { position: relative; padding: 28px; color: #fff; display: flex; flex-direction: column; background: var(--profundo) url("../login-ahorro.jpg") 45% center / cover; }
+  .login .panel::before { content: ""; position: absolute; inset: 0; background: linear-gradient(to top, #1d3f2c, #1d3f2c66 50%, #1d3f2c1a); }
+  .login .panel > * { position: relative; }
+  .login .panel img { height: 34px; width: auto; align-self: flex-start; }
+  .login .panel strong { margin-top: auto; font-size: 1.9rem; line-height: 1.05; letter-spacing: -0.02em; }
+  .login .form { padding: 28px; display: flex; flex-direction: column; justify-content: center; gap: 10px; }
+  .login .campo { height: 38px; border: 1px solid #B5C6BB; border-radius: 10px; }
+  .login .boton { height: 40px; border-radius: 10px; background: var(--texto); color: #fff; display: grid; place-items: center; font-weight: 600; font-size: .9rem; margin-top: 6px; }
+  .login small { color: var(--suave); }
+  @media (max-width: 640px) { .login { grid-template-columns: 1fr; } .login .panel { min-height: 260px; } h1 { font-size: 1.9rem; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>Identidad de marca Fluvi</h1>
+  <p class="lead">El cauce de la riqueza. El dinero corre como un río, se encauza, se acumula en monedas y sale hacia arriba. Esta guía reúne las piezas vectoriales y las reglas para usarlas en la app.</p>
+
+  <div class="hero"><img src="fluvi-logo-horizontal-claro.svg" alt="Logotipo Fluvi"></div>
+
+  <h2>Símbolo</h2>
+  <p>Cuatro piezas: la <b>ola</b> (verde bosque) es la corriente que encauza, el <b>cauce</b> (menta) es la calma de fondo, las <b>tres monedas</b> son el ahorro que se acumula y la <b>flecha</b> es el crecimiento. Las monedas siempre llevan un margen que las separa de las olas.</p>
+  <div class="grid">
+    <div class="card"><div class="vista"><img src="fluvi-simbolo-claro.svg" alt=""></div><div class="pie">Fondo claro<br><code>fluvi-simbolo-claro.svg</code></div></div>
+    <div class="card"><div class="vista oscuro"><img src="fluvi-simbolo-oscuro.svg" alt=""></div><div class="pie">Fondo oscuro<br><code>fluvi-simbolo-oscuro.svg</code></div></div>
+    <div class="card"><div class="vista"><img src="fluvi-simbolo-mono-positivo.svg" alt=""></div><div class="pie">Monocromo positivo<br><code>fluvi-simbolo-mono-positivo.svg</code></div></div>
+    <div class="card"><div class="vista oscuro"><img src="fluvi-simbolo-mono-negativo.svg" alt=""></div><div class="pie">Monocromo negativo<br><code>fluvi-simbolo-mono-negativo.svg</code></div></div>
+  </div>
+
+  <h2>Logotipo</h2>
+  <p>La palabra «Fluvi» está dibujada a mano con trazo de grosor uniforme y terminales redondeadas, afín a Manrope ExtraBold. Va en vectores, así que no depende de que la fuente esté instalada.</p>
+  <div class="grid">
+    <div class="card"><div class="vista"><img src="fluvi-logo-horizontal-claro.svg" alt=""></div><div class="pie">Horizontal, fondo claro<br><code>fluvi-logo-horizontal-claro.svg</code></div></div>
+    <div class="card"><div class="vista oscuro"><img src="fluvi-logo-horizontal-oscuro.svg" alt=""></div><div class="pie">Horizontal, fondo oscuro<br><code>fluvi-logo-horizontal-oscuro.svg</code></div></div>
+    <div class="card"><div class="vista"><img src="fluvi-logo-vertical-claro.svg" alt=""></div><div class="pie">Vertical, fondo claro<br><code>fluvi-logo-vertical-claro.svg</code></div></div>
+    <div class="card"><div class="vista oscuro"><img src="fluvi-logo-vertical-oscuro.svg" alt=""></div><div class="pie">Vertical, fondo oscuro<br><code>fluvi-logo-vertical-oscuro.svg</code></div></div>
+    <div class="card"><div class="vista"><img src="fluvi-logo-horizontal-mono-positivo.svg" alt=""></div><div class="pie">Monocromo positivo<br><code>fluvi-logo-horizontal-mono-positivo.svg</code></div></div>
+    <div class="card"><div class="vista negro"><img src="fluvi-logo-horizontal-mono-negativo.svg" alt=""></div><div class="pie">Monocromo negativo<br><code>fluvi-logo-horizontal-mono-negativo.svg</code></div></div>
+    <div class="card"><div class="vista"><img src="fluvi-logo-vertical-mono-positivo.svg" alt=""></div><div class="pie">Vertical monocromo positivo<br><code>fluvi-logo-vertical-mono-positivo.svg</code></div></div>
+    <div class="card"><div class="vista negro"><img src="fluvi-logo-vertical-mono-negativo.svg" alt=""></div><div class="pie">Vertical monocromo negativo<br><code>fluvi-logo-vertical-mono-negativo.svg</code></div></div>
+  </div>
+
+  <h2>Ícono de app y favicon</h2>
+  <p>El ícono usa el símbolo en su versión oscura sobre verde profundo. Por debajo de 48 px las monedas y la flecha se pierden, así que el favicon es una reducción a dos olas: dorada (la corriente) y menta (el cauce).</p>
+  <div class="card" style="margin-top:20px"><div class="vista" style="justify-items:start">
+    <div class="tamanos">
+      <figure><img src="fluvi-icono-app.svg" width="180" alt="">180 px</figure>
+      <figure><img src="fluvi-icono-app.svg" width="64" alt="">64 px</figure>
+      <figure><img src="fluvi-icono-app.svg" width="48" alt="">48 px</figure>
+      <figure><img src="fluvi-favicon.svg" width="64" alt="">favicon 64 px</figure>
+      <figure><img src="fluvi-favicon.svg" width="32" alt="">32 px</figure>
+      <figure><img src="fluvi-favicon.svg" width="16" alt="">16 px</figure>
+    </div>
+  </div><div class="pie"><code>fluvi-icono-app.svg</code> · <code>fluvi-favicon.svg</code></div></div>
+
+  <h2>Paleta</h2>
+  <p>Contrastes medidos con la fórmula WCAG 2.1. AA exige 4,5:1 para texto normal y 3:1 para texto grande y elementos gráficos.</p>
+  <div class="paleta">
+    <div class="color"><div class="muestra" style="background:#244D35;color:#fff">Aa</div><div class="datos"><b>Verde bosque · #244D35</b>Logotipo, títulos y texto de marca.<br><span>8,9:1 sobre fondo claro</span></div></div>
+    <div class="color"><div class="muestra" style="background:#2E7D55;color:#fff">Aa</div><div class="datos"><b>Verde hoja · #2E7D55</b>Acento principal, ingresos, progreso, flecha del símbolo.<br><span>5,0:1 con texto blanco</span></div></div>
+    <div class="color"><div class="muestra" style="background:#1D3F2C;color:#fff">Aa</div><div class="datos"><b>Verde profundo · #1D3F2C</b>Fondos de marca, ícono de app, panel del login.<br><span>11,7:1 con texto blanco</span></div></div>
+    <div class="color"><div class="muestra" style="background:#DCEFE3;color:#244D35">Aa</div><div class="datos"><b>Menta · #DCEFE3</b>Fondos suaves y estados activos.<br><span>8,0:1 con verde bosque</span></div></div>
+    <div class="color"><div class="muestra" style="background:#BFE3D2;color:#1D3F2C">Aa</div><div class="datos"><b>Cauce · #BFE3D2</b>Ola inferior del símbolo y del favicon. Solo para la marca, no para texto.<br><span>8,4:1 sobre verde profundo</span></div></div>
+    <div class="color"><div class="muestra" style="background:#E9B949;color:#1F1A17">Aa</div><div class="datos"><b>Dorado · #E9B949</b>Monedas, ahorro y logros. Acento puntual. Sobre él, texto oscuro.<br><span>9,4:1 con texto #1F1A17</span></div></div>
+    <div class="color"><div class="muestra" style="background:#E2574C;color:#1F1A17">Aa</div><div class="datos"><b>Coral · #E2574C</b>Gastos y alertas en superficies y gráficos. Nunca en el logotipo.<br><span>Para texto usar #C8322E (4,9:1)</span></div></div>
+    <div class="color"><div class="muestra" style="background:#F4F7F2;color:#1F1A17">Aa</div><div class="datos"><b>Fondo claro · #F4F7F2</b>Fondo general. Texto #1F1A17.<br><span>16,0:1</span></div></div>
+  </div>
+  <h3 style="margin-top:28px">Modo oscuro</h3>
+  <div class="paleta">
+    <div class="color"><div class="muestra" style="background:#111614;color:#E9EFEB">Aa</div><div class="datos"><b>Fondo · #111614</b>Texto #E9EFEB.<br><span>15,7:1</span></div></div>
+    <div class="color"><div class="muestra" style="background:#182019;color:#6FC492">Aa</div><div class="datos"><b>Tarjetas · #182019</b>Equivale al blanco de tarjeta.<br><span>Verde hoja oscuro 7,9:1</span></div></div>
+    <div class="color"><div class="muestra" style="background:#6FC492;color:#111614">Aa</div><div class="datos"><b>Verde hoja (oscuro) · #6FC492</b>Equivale a #2E7D55.<br><span>8,7:1 sobre #111614</span></div></div>
+    <div class="color"><div class="muestra" style="background:#E9B949;color:#111614">Aa</div><div class="datos"><b>Dorado · #E9B949</b>Se mantiene igual. En el logo oscuro pasa a ser la ola y la flecha.<br><span>10,0:1 sobre #111614</span></div></div>
+    <div class="color"><div class="muestra" style="background:#F07A70;color:#111614">Aa</div><div class="datos"><b>Coral (oscuro) · #F07A70</b>Gastos y alertas.<br><span>6,7:1 sobre #111614</span></div></div>
+  </div>
+
+  <h2>Reglas de uso</h2>
+  <div class="reglas">
+    <div class="card"><div class="vista"><div class="zona"><img src="fluvi-logo-horizontal-claro.svg" alt=""></div></div><div class="pie"><b>Área de protección.</b> Deja libre alrededor del logo un margen igual a la mitad de la altura del logotipo. Nada de texto, bordes ni otros logos dentro de esa zona.</div></div>
+    <div class="card"><div class="vista"><table>
+      <tr><th>Pieza</th><th>Mínimo digital</th></tr>
+      <tr><td>Logotipo horizontal</td><td>24 px de alto (90 px de ancho)</td></tr>
+      <tr><td>Logotipo vertical</td><td>64 px de alto</td></tr>
+      <tr><td>Símbolo completo</td><td>40 px de ancho</td></tr>
+      <tr><td>Ícono de app</td><td>48 px</td></tr>
+      <tr><td>Favicon</td><td>16 px</td></tr>
+    </table></div><div class="pie"><b>Tamaño mínimo.</b> Por debajo de estas medidas usa la pieza siguiente de la tabla: el favicon reemplaza al símbolo en tamaños pequeños.</div></div>
+    <div class="card"><div class="vista"><div class="mal">
+      <figure><img src="fluvi-logo-horizontal-claro.svg" style="transform:scaleX(1.5);transform-origin:center" alt="">Deformar</figure>
+      <figure><img src="fluvi-logo-horizontal-claro.svg" style="filter:hue-rotate(180deg)" alt="">Cambiar colores</figure>
+      <figure style="background:#2E7D55"><img src="fluvi-logo-horizontal-claro.svg" alt="">Logo claro sobre verde</figure>
+      <figure><img src="fluvi-logo-horizontal-claro.svg" style="transform:rotate(-12deg)" alt="">Rotar</figure>
+    </div></div><div class="pie"><b>Usos incorrectos.</b> No estirar, rotar, cambiar colores, poner sombras ni usar la versión clara sobre fondos verdes o fotos. Tampoco mover las monedas ni quitar su margen.</div></div>
+  </div>
+
+  <h2>Vistas previas</h2>
+  <div class="previas">
+    <div class="celular"><div class="pantalla">
+      <span class="hora">9:41</span>
+      <div class="apps">
+        <div class="app"><i></i>Cámara</div><div class="app"><i></i>Nequi</div><div class="app"><img src="fluvi-icono-app.svg" alt="">Fluvi</div><div class="app"><i></i>Fotos</div>
+        <div class="app"><i></i>Mapas</div><div class="app"><i></i>Clima</div><div class="app"><i></i>Notas</div><div class="app"><i></i>Reloj</div>
+        <div class="app"><i></i>Correo</div><div class="app"><i></i>Música</div><div class="app"><i></i>Ajustes</div><div class="app"><i></i>Tienda</div>
+      </div>
+      <div class="dock"><i></i><i></i><i></i><i></i></div>
+    </div></div>
+    <div class="login">
+      <div class="panel"><img src="fluvi-logo-horizontal-oscuro.svg" alt="Fluvi"><strong>Tus finanzas, en flujo.</strong><span style="opacity:.8;margin-top:8px">Registra, planea y mira crecer tu ahorro.</span></div>
+      <div class="form"><img src="fluvi-logo-horizontal-claro.svg" alt="" style="height:28px;align-self:flex-start;margin-bottom:12px"><b style="font-size:1.25rem">Bienvenida de vuelta</b><small>Correo</small><div class="campo"></div><small>Contraseña</small><div class="campo"></div><div class="boton">Entrar</div></div>
+    </div>
+  </div>
+</main>
+</body>
+</html>
