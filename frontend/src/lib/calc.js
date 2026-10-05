@@ -74,22 +74,44 @@ export function desglose(state, mes, padreId) {
 export const saldoBilleteras = ({ saldos, billeteras, anio }, mes) =>
   billeteras.reduce((t, b) => t + (saldos[clave(anio, mes, b.id)] || 0), 0)
 
-export function saldoVivoBilleteras(state, mes) {
-  const { billeteras, saldos, movimientos, anio } = state
-  const movsDel = movimientosDe(movimientos, anio, mes)
-  return billeteras.reduce((total, b) => {
-    const base = saldos[clave(anio, mes, b.id)] || 0
-    const { entradas, salidas } = actividadBilletera(movsDel, b.id)
-    return total + base + entradas - salidas
-  }, 0)
+const indiceMes = (anio, mes) => anio * 12 + mes
+
+// Saldo de una billetera al cierre de un mes (de cualquier año). Cada mes parte del saldo registrado para ese mes
+// (hoja Caja o "Ajustar saldo") y, si no lo tiene, del cierre del mes anterior; luego suma entradas y resta salidas.
+export function cierreBilletera(state, anio, mes, billeteraId) {
+  const objetivo = indiceMes(anio, mes)
+  const registrados = new Map()
+  for (const [k, valor] of Object.entries(state.saldos)) {
+    if (idDeClave(k) !== billeteraId) continue
+    const [a, m] = k.split('-').map(Number)
+    registrados.set(indiceMes(a, m), valor)
+  }
+  const netos = new Map()
+  for (const m of state.movimientos) {
+    if (m.billeteraId !== billeteraId && m.destinoId !== billeteraId) continue
+    const i = indiceMes(anioDe(m.fecha), mesDe(m.fecha))
+    if (i > objetivo) continue
+    const { entradas, salidas } = actividadBilletera([m], billeteraId)
+    netos.set(i, (netos.get(i) || 0) + entradas - salidas)
+  }
+  const inicio = Math.min(objetivo, ...registrados.keys(), ...netos.keys())
+  let saldo = 0
+  for (let i = inicio; i <= objetivo; i++) {
+    if (registrados.has(i)) saldo = registrados.get(i)
+    saldo += netos.get(i) || 0
+  }
+  return saldo
 }
 
-export function saldoVivoBilletera(state, mes, billeteraId) {
-  const base = state.saldos[clave(state.anio, mes, billeteraId)] || 0
-  const movsDel = movimientosDe(state.movimientos, state.anio, mes)
-  const { entradas, salidas } = actividadBilletera(movsDel, billeteraId)
-  return base + entradas - salidas
-}
+export const saldoVivoBilletera = (state, mes, billeteraId) => cierreBilletera(state, state.anio, mes, billeteraId)
+
+export const saldoVivoBilleteras = (state, mes) => state.billeteras.reduce((total, b) => total + saldoVivoBilletera(state, mes, b.id), 0)
+
+// Cierre del mes anterior (diciembre del año pasado si el mes es enero).
+export const cierreAnteriorBilletera = (state, mes, billeteraId) =>
+  mes > 0 ? cierreBilletera(state, state.anio, mes - 1, billeteraId) : cierreBilletera(state, state.anio - 1, 11, billeteraId)
+
+export const cierreAnteriorBilleteras = (state, mes) => state.billeteras.reduce((total, b) => total + cierreAnteriorBilletera(state, mes, b.id), 0)
 
 export function saldoInicial(state, mes) {
   let saldo = saldoBilleteras(state, 0)
@@ -173,11 +195,14 @@ export function serieSaldos(state) {
   }))
 }
 
-export const serieBilleteras = (state) =>
-  Array.from({ length: 12 }, (_, mes) => ({
+// Total en billeteras al cierre de cada mes, hasta el mes actual (los meses futuros quedan vacíos).
+export function serieBilleteras(state) {
+  const hoyIndice = indiceMes(new Date().getFullYear(), new Date().getMonth())
+  return Array.from({ length: 12 }, (_, mes) => ({
     mes,
-    valor: state.billeteras.some((b) => state.saldos[clave(state.anio, mes, b.id)] != null) ? saldoBilleteras(state, mes) : null,
+    valor: state.billeteras.length && indiceMes(state.anio, mes) <= hoyIndice ? saldoVivoBilleteras(state, mes) : null,
   }))
+}
 
 export const separarCategoria = (categorias, id) => {
   const c = categorias.find((x) => x.id === id)

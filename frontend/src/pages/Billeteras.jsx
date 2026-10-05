@@ -11,7 +11,7 @@ import { Panel } from '@/components/Panel'
 import { PeriodoPicker } from '@/components/PeriodPickers'
 import { StatCard } from '@/components/StatCard'
 import { Button } from '@/components/ui/button'
-import { actividadBilletera, esMesUnico, movsFiltrados, saldoVivoBilletera, saldoVivoBilleteras, serieBilleteras } from '@/lib/calc'
+import { actividadBilletera, cierreAnteriorBilletera, cierreAnteriorBilleteras, esMesUnico, movsFiltrados, saldoVivoBilletera, saldoVivoBilleteras, serieBilleteras } from '@/lib/calc'
 import { etiquetaPeriodo, MESES } from '@/lib/format'
 import { useFormatoMoneda } from '@/lib/privado'
 import { entrada, escalonado } from '@/lib/motion'
@@ -29,7 +29,7 @@ export default function Billeteras() {
   const mesVivo = unico ? mes : Array.isArray(mes) ? Math.max(...mes) : new Date().getMonth()
   const total = saldoVivoBilleteras(state, mesVivo)
   const delMes = movsFiltrados(state.movimientos, anio, mes)
-  const diferencia = unico && mes > 0 ? total - saldoVivoBilleteras(state, mes - 1) : null
+  const diferencia = unico ? total - cierreAnteriorBilleteras(state, mes) : null
   const principal = state.billeteras.map((b) => ({ ...b, saldo: saldoVivoBilletera(state, mesVivo, b.id) })).sort((a, b) => b.saldo - a.saldo)[0]
 
   return (
@@ -39,7 +39,7 @@ export default function Billeteras() {
       </PageHeader>
       <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         <StatCard label={`Total en ${etiquetaPeriodo(mes, anio).toLowerCase()}`} value={total} tone="positive" />
-        <StatCard label="Frente al mes anterior" value={diferencia ?? 0} signo tone={diferencia == null ? undefined : diferencia < 0 ? 'negative' : 'positive'} hint={diferencia == null ? 'Sin mes anterior disponible' : `Cierre de ${MESES[mes - 1].toLowerCase()}`} />
+        <StatCard label="Frente al mes anterior" value={diferencia ?? 0} signo tone={diferencia == null ? undefined : diferencia < 0 ? 'negative' : 'positive'} hint={diferencia == null ? 'Sin mes anterior disponible' : `Cierre de ${mes > 0 ? MESES[mes - 1].toLowerCase() : `diciembre ${anio - 1}`}`} />
         <StatCard label="Billetera principal" value={principal?.nombre ?? 'Sin billeteras'} hint={principal ? formatCOP(principal.saldo) : undefined} />
         <StatCard label="Billeteras activas" value={String(state.billeteras.length)} />
       </div>
@@ -52,7 +52,7 @@ export default function Billeteras() {
                   key={b.id}
                   billetera={b}
                   saldo={saldoVivoBilletera(state, mesVivo, b.id)}
-                  anterior={unico && mes > 0 ? saldoVivoBilletera(state, mes - 1, b.id) : null}
+                  anterior={unico ? cierreAnteriorBilletera(state, mes, b.id) : null}
                   actividad={actividadBilletera(delMes, b.id)}
                   className={entrada}
                   style={escalonado(i)}
