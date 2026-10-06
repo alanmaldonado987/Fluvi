@@ -40,6 +40,9 @@
   --negative: #c8322e;
   --negative-soft: #fdecec;
   --on-forest: #ffffff;
+  --borde-suave: rgb(31 26 23 / 0.07);
+  --sombra-card: 0 1px 2px rgb(20 40 28 / 0.04), 0 4px 16px -6px rgb(20 40 28 / 0.08);
+  --sombra-elevada: 0 2px 6px rgb(20 40 28 / 0.05), 0 16px 40px -12px rgb(20 40 28 / 0.22);
 }
 
 .dark {
@@ -76,6 +79,9 @@
   --negative: #f2928c;
   --negative-soft: #3b201e;
   --on-forest: #14231b;
+  --borde-suave: var(--border);
+  --sombra-card: 0 1px 2px rgb(0 0 0 / 0.25);
+  --sombra-elevada: 0 2px 6px rgb(0 0 0 / 0.3), 0 16px 40px -12px rgb(0 0 0 / 0.6);
 }
 
 @theme inline {
@@ -119,6 +125,15 @@
   --radius-xl: var(--radius);
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 16px);
+  --shadow-card: var(--sombra-card);
+  --shadow-elevated: var(--sombra-elevada);
+}
+
+/* Superficie de tarjeta: borde suave más sombra difusa, en una sola box-shadow. */
+@utility superficie {
+  background-color: var(--card);
+  border-radius: calc(var(--radius) + 8px);
+  box-shadow: 0 0 0 1px var(--borde-suave), var(--sombra-card);
 }
 
 @layer base {
@@ -141,10 +156,27 @@
   [role="option"],
   [role="radio"],
   [role="combobox"],
+  [role="switch"],
+  [role="checkbox"],
   label:has(> input[type="checkbox"]),
+  label:has([role="checkbox"]),
+  label:has([role="switch"]),
   input[type="checkbox"],
   input[type="file"] {
     cursor: pointer;
+  }
+}
+
+/* Acciones de fila: en escritorio con mouse aparecen al pasar el cursor o al enfocar; en táctil siempre visibles. */
+@media (hover: hover) and (pointer: fine) {
+  .acciones-hover {
+    opacity: 0;
+    transition: opacity 150ms cubic-bezier(0.23, 1, 0.32, 1);
+  }
+  .con-acciones:hover .acciones-hover,
+  .con-acciones:focus-within .acciones-hover,
+  .acciones-hover:has([aria-expanded="true"]) {
+    opacity: 1;
   }
 }
 

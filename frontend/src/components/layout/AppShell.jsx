@@ -1,12 +1,12 @@
-import { ArrowLeftRight, ChartPie, Eye, EyeOff, HandCoins, House, PanelLeftClose, PanelLeftOpen, Wallet, Waves } from 'lucide-react'
+import { ArrowLeftRight, ChartPie, HandCoins, House, PanelLeftClose, PanelLeftOpen, Wallet, Waves } from 'lucide-react'
 import { useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { BotonPrivado } from '@/components/BotonPrivado'
 import { Logo } from '@/components/Logo'
 import { Tutorial } from '@/components/Tutorial'
 import { Button } from '@/components/ui/button'
 import { UsuarioMenu } from '@/components/UsuarioMenu'
 import { entradaPagina } from '@/lib/motion'
-import { alternarPrivado, usePrivado } from '@/lib/privado'
 import { cn } from '@/lib/utils'
 import { VERSION } from '@/lib/version'
 import { useAuth } from '@/store/auth'
@@ -21,6 +21,9 @@ const rutas = [
 ]
 
 const CLAVE = 'fluvi:sidebar'
+// Alto de cada enlace del menú lateral (py-2.5 + ícono de 20px, o size-11 contraído) más el gap-1.
+const ALTO_ENLACE = { abierto: 40, contraido: 44 }
+const SEPARACION = 4
 const foco = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring'
 
 const leerColapsado = () => {
@@ -36,17 +39,13 @@ export function AppShell() {
   const { usuario, actualizar } = useAuth()
   const [colapsado, setColapsado] = useState(leerColapsado)
   const [tutorial, setTutorial] = useState(() => !usuario.tutorialVisto)
-  const privado = usePrivado()
+  const activo = rutas.findIndex(({ to }) => (to === '/' ? pathname === '/' : pathname.startsWith(to)))
+  const alto = colapsado ? ALTO_ENLACE.contraido : ALTO_ENLACE.abierto
 
   const cerrarTutorial = () => {
     setTutorial(false)
     if (!usuario.tutorialVisto) actualizar({ data: { tutorialVisto: true } }).catch(() => {})
   }
-  const botonPrivado = (
-    <Button data-tour="privado" variant="ghost" size="icon" className="size-9 text-muted-foreground" aria-label={privado ? 'Mostrar cifras' : 'Ocultar cifras'} aria-pressed={privado} onClick={alternarPrivado}>
-      {privado ? <EyeOff /> : <Eye />}
-    </Button>
-  )
 
   const alternar = () => {
     const siguiente = !colapsado
@@ -63,14 +62,16 @@ export function AppShell() {
       <aside className={cn('sticky top-0 hidden h-svh flex-col gap-5 overflow-hidden border-r bg-card md:flex', colapsado ? 'items-center px-2 py-4' : 'p-4')}>
         <div className={cn('flex items-center', colapsado ? 'flex-col gap-2' : 'justify-between pl-2')}>
           <Logo compacto={colapsado} />
-          <span className={cn('flex', colapsado ? 'flex-col gap-2' : 'items-center')}>
-            {botonPrivado}
-            <Button variant="ghost" size="icon" className="size-9 text-muted-foreground" aria-label={colapsado ? 'Expandir menú' : 'Contraer menú'} aria-expanded={!colapsado} onClick={alternar}>
-              {colapsado ? <PanelLeftOpen /> : <PanelLeftClose />}
-            </Button>
-          </span>
+          <Button variant="ghost" size="icon" className="size-9 text-muted-foreground" aria-label={colapsado ? 'Expandir menú' : 'Contraer menú'} aria-expanded={!colapsado} onClick={alternar}>
+            {colapsado ? <PanelLeftOpen /> : <PanelLeftClose />}
+          </Button>
         </div>
-        <nav aria-label="Principal" className="grid gap-1">
+        <nav aria-label="Principal" className="relative isolate grid gap-1">
+          <span
+            aria-hidden="true"
+            className={cn('absolute inset-x-0 top-0 -z-10 rounded-full bg-mint transition-[translate,height,opacity] duration-300 ease-out', activo === -1 && 'opacity-0')}
+            style={{ height: alto, translate: `0 ${Math.max(activo, 0) * (alto + SEPARACION)}px` }}
+          />
           {rutas.map(({ to, label, icon: Icon, tour }) => (
             <NavLink
               key={to}
@@ -83,7 +84,7 @@ export function AppShell() {
                   'flex items-center gap-3 rounded-full text-sm font-semibold transition-colors',
                   colapsado ? 'size-11 justify-center' : 'px-4 py-2.5',
                   foco,
-                  isActive ? 'bg-mint text-forest' : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                  isActive ? 'text-forest' : 'text-muted-foreground hover:bg-muted hover:text-foreground',
                 )
               }
             >
@@ -92,7 +93,7 @@ export function AppShell() {
             </NavLink>
           ))}
         </nav>
-        <div className={cn('mt-auto w-full border-t pt-3', colapsado && 'flex justify-center')}>
+        <div className={cn('mt-auto w-full border-t pt-3', colapsado && 'flex flex-col items-center')}>
           <UsuarioMenu compacto={colapsado} side={colapsado ? 'right' : 'top'} onTutorial={() => setTutorial(true)} />
           {VERSION ? <p className={cn('mt-2 text-[11px] text-muted-foreground', colapsado ? 'text-center' : 'px-2')}>{colapsado ? `v${VERSION}` : `Versión ${VERSION}`}</p> : null}
         </div>
@@ -101,7 +102,7 @@ export function AppShell() {
       <header className="sticky top-0 z-20 flex items-center justify-between gap-3 bg-background/85 px-4 py-2.5 backdrop-blur-md md:hidden">
         <Logo />
         <span className="flex items-center gap-1">
-          {botonPrivado}
+          <BotonPrivado className="size-9" />
           <UsuarioMenu compacto onTutorial={() => setTutorial(true)} />
         </span>
       </header>
@@ -112,8 +113,8 @@ export function AppShell() {
         </div>
       </main>
 
-      <nav aria-label="Principal" className="fixed inset-x-0 bottom-0 z-20 border-t bg-card/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden">
-        <ul className="grid grid-cols-6">
+      <nav aria-label="Principal" className="fixed inset-x-2 bottom-[calc(env(safe-area-inset-bottom)+0.5rem)] z-20 md:hidden">
+        <ul className="mx-auto flex w-fit max-w-full items-center rounded-full border bg-card/85 p-1.5 shadow-elevated backdrop-blur-md">
           {rutas.map(({ to, label, icon: Icon, tour }) => (
             <li key={to}>
               <NavLink
@@ -121,15 +122,18 @@ export function AppShell() {
                 end={to === '/'}
                 data-tour={tour}
                 className={({ isActive }) =>
-                  cn('flex flex-col items-center gap-1 py-2 text-[11px] font-semibold', foco, isActive ? 'text-forest' : 'text-muted-foreground')
+                  cn('flex h-11 items-center rounded-full px-1.5 text-xs font-semibold transition-[background-color,color,padding] duration-300 ease-out', foco, isActive ? 'bg-mint px-3 text-forest' : 'text-muted-foreground')
                 }
               >
                 {({ isActive }) => (
                   <>
-                    <span className={cn('grid h-8 w-14 place-items-center rounded-full transition-colors', isActive && 'bg-mint')}>
-                      <Icon className="size-5" aria-hidden="true" />
+                    <Icon className="size-5 shrink-0" aria-hidden="true" />
+                    {/* La etiqueta se despliega solo en la sección activa; en las demás queda a ancho cero pero sigue siendo legible para lectores de pantalla. */}
+                    <span className={cn('grid transition-[grid-template-columns] duration-300 ease-out', isActive ? 'grid-cols-[1fr]' : 'grid-cols-[0fr]')}>
+                      <span className="min-w-0 overflow-hidden whitespace-nowrap">
+                        <span className="block pl-1.5">{label}</span>
+                      </span>
                     </span>
-                    {label}
                   </>
                 )}
               </NavLink>

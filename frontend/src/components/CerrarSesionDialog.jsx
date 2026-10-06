@@ -1,3 +1,4 @@
+import { LogOut, MonitorSmartphone } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
@@ -25,6 +26,7 @@ export function CerrarSesionDialog({ open, onOpenChange, todos = false }) {
       title={todos ? '¿Cerrar sesión en todos los dispositivos?' : '¿Cerrar sesión?'}
       description={todos ? 'Se cierran todas las sesiones abiertas, incluida esta. Tendrás que volver a entrar en cada dispositivo.' : 'Tendrás que volver a entrar con tu correo y contraseña.'}
       confirmLabel="Cerrar sesión"
+      icon={todos ? MonitorSmartphone : LogOut}
       disabled={saliendo}
       onConfirm={confirmar}
     />

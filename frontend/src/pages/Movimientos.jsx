@@ -168,7 +168,7 @@ export default function Movimientos() {
         </Button>
       </PageHeader>
 
-      <div className="grid gap-2 md:flex md:flex-wrap md:items-center">
+      <div className="grid gap-2 md:sticky md:top-0 md:z-10 md:-mx-6 md:-my-2 md:flex md:flex-wrap md:items-center md:bg-background/85 md:px-6 md:py-2 md:backdrop-blur-md xl:-mx-10 xl:px-10">
         <Tabs value={filtro.tipo} onValueChange={(tipo) => cambiar({ tipo, categoriaId: 'todas' })}>
           <TabsList className="w-full md:w-auto">
             {tipos.map(([valor, label]) => (

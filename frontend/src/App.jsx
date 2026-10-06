@@ -43,7 +43,7 @@ const router = createBrowserRouter([
 
 function Avisos() {
   const tema = useTemaResuelto()
-  return <Toaster position="top-center" richColors closeButton theme={tema === 'oscuro' ? 'dark' : 'light'} />
+  return <Toaster position="top-center" richColors closeButton theme={tema === 'oscuro' ? 'dark' : 'light'} style={{ '--border-radius': '16px' }} toastOptions={{ className: 'font-sans shadow-elevated' }} />
 }
 
 function Sesion() {

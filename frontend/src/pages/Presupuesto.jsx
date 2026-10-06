@@ -1,12 +1,13 @@
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, rectSortingStrategy, useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { CalendarRange, ChartPie, ChevronDown, ListTree, MoreHorizontal, Pencil, PiggyBank, Plus, Trash2 } from 'lucide-react'
+import { CalendarRange, ChartPie, ChevronDown, CircleCheck, ListTree, MoreHorizontal, Pencil, PiggyBank, Plus, Target, Trash2, TrendingUp, Wallet } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { BarrasComparativas } from '@/components/charts/BarrasComparativas'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { EmptyState } from '@/components/EmptyState'
+import { Anillo } from '@/components/Anillo'
 import { CategoriaIcono } from '@/components/CategoriaIcono'
 import { FilaCategoria } from '@/components/FilaCategoria'
 import { MetaDialog } from '@/components/MetaDialog'
@@ -15,7 +16,6 @@ import { NombreDialog } from '@/components/NombreDialog'
 import { NuevaFilaForm } from '@/components/NuevaFilaForm'
 import { PageHeader } from '@/components/PageHeader'
 import { Panel } from '@/components/Panel'
-import { Progreso } from '@/components/Progreso'
 import { PeriodoPicker } from '@/components/PeriodPickers'
 import { StatCard } from '@/components/StatCard'
 import { Button } from '@/components/ui/button'
@@ -59,11 +59,11 @@ function Subcategorias({ padre, filas, onAgregar, onRenombrar, onEliminar }) {
       {filas.length ? (
         <ul className="divide-y divide-border/60">
           {filas.map((f) => (
-            <li key={f.id ?? 'directo'} className="flex items-center gap-1 py-1 text-sm">
+            <li key={f.id ?? 'directo'} className="con-acciones flex items-center gap-1 py-1 text-sm">
               <span className={cn('min-w-0 flex-1 truncate', f.id ? 'font-medium' : 'text-muted-foreground')}>{f.nombre}</span>
               <Money value={f.valor} className="font-semibold" />
               {f.id ? (
-                <span className="flex">
+                <span className="acciones-hover flex">
                   <Button variant="ghost" size="icon" className="size-7" aria-label={`Renombrar ${f.nombre}`} onClick={() => onRenombrar(f)}>
                     <Pencil />
                   </Button>
@@ -133,7 +133,7 @@ function Metas() {
             const p = progresoMeta(state, meta)
             const { etiqueta, icono } = describirCategoria(mapa, meta.categoriaId)
             return (
-              <li key={meta.id} className={cn('rounded-2xl bg-card p-4 ring-1 ring-border', entrada)} style={escalonado(i)}>
+              <li key={meta.id} className={cn('con-acciones superficie p-4', entrada)} style={escalonado(i)}>
                 <div className="flex items-start gap-3">
                   <CategoriaIcono nombre={icono} tipo={mapa.get(meta.categoriaId)?.tipo} />
                   <div className="min-w-0 flex-1">
@@ -143,7 +143,7 @@ function Metas() {
                       {meta.fechaLimite ? `, hasta el ${fechaCorta(meta.fechaLimite)} de ${meta.fechaLimite.slice(0, 4)}` : ''}
                     </p>
                   </div>
-                  <span className="flex shrink-0">
+                  <span className="acciones-hover flex shrink-0">
                     <Button variant="ghost" size="icon" className="size-8" aria-label={`Editar ${meta.nombre}`} onClick={() => abrir(meta)}>
                       <Pencil />
                     </Button>
@@ -161,14 +161,18 @@ function Metas() {
                     </Button>
                   </span>
                 </div>
-                <p className="mt-3">
-                  <Money value={p.ahorrado} className="text-2xl font-bold tracking-tight" />{' '}
-                  <span className="text-sm text-muted-foreground">
-                    de <Money value={meta.objetivo} />
-                  </span>
-                </p>
-                <Progreso valor={p.avance} tone={p.vencida ? 'negative' : 'positive'} className="mt-2" />
-                <p className={cn('mt-2 text-xs', p.vencida ? 'font-semibold text-negative' : 'text-muted-foreground')}>{detalle(p)}</p>
+                <div className="mt-4 flex items-center gap-4">
+                  <Anillo valor={p.avance} tone={p.vencida ? 'negative' : 'positive'} tamano={68} grosor={7} />
+                  <div className="min-w-0">
+                    <p>
+                      <Money value={p.ahorrado} className="text-2xl font-bold tracking-tight" />{' '}
+                      <span className="text-sm text-muted-foreground">
+                        de <Money value={meta.objetivo} />
+                      </span>
+                    </p>
+                    <p className={cn('mt-1 text-xs', p.vencida ? 'font-semibold text-negative' : 'text-muted-foreground')}>{detalle(p)}</p>
+                  </div>
+                </div>
               </li>
             )
           })}
@@ -263,10 +267,10 @@ export default function Presupuesto() {
           ) : (
             <>
           <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-            <StatCard label={`Proyectado en ${etiquetaPeriodo(mes, state.anio).toLowerCase()}`} value={t.proyectado} />
-            <StatCard label={egreso ? 'Gastado' : 'Recibido'} value={t.real} tone={egreso && t.real > t.proyectado ? 'negative' : 'positive'} hint={`${porcentaje}% de lo proyectado`} />
-            <StatCard label={egreso ? 'Disponible' : 'Pendiente por recibir'} value={Math.max(t.diferencia, 0)} tone={egreso && t.diferencia < 0 ? 'negative' : undefined} hint={egreso && t.diferencia < 0 ? 'Presupuesto agotado' : undefined} />
-            <StatCard label={egreso ? 'Categorías excedidas' : 'Categorías completas'} value={`${cumplidas} de ${filas.length}`} />
+            <StatCard icon={Target} label={`Proyectado en ${etiquetaPeriodo(mes, state.anio).toLowerCase()}`} value={t.proyectado} />
+            <StatCard icon={TrendingUp} label={egreso ? 'Gastado' : 'Recibido'} value={t.real} tone={egreso && t.real > t.proyectado ? 'negative' : 'positive'} hint={`${porcentaje}% de lo proyectado`} />
+            <StatCard icon={Wallet} label={egreso ? 'Disponible' : 'Pendiente por recibir'} value={Math.max(t.diferencia, 0)} tone={egreso && t.diferencia < 0 ? 'negative' : undefined} hint={egreso && t.diferencia < 0 ? 'Presupuesto agotado' : undefined} />
+            <StatCard icon={CircleCheck} label={egreso ? 'Categorías excedidas' : 'Categorías completas'} value={`${cumplidas} de ${filas.length}`} />
           </div>
           <div className="grid gap-5 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
             <Panel title={`Categorías de ${tipo.toLowerCase()}`} action={<p className="hidden text-xs text-muted-foreground md:block">{unico ? 'Edita el valor proyectado en cada fila' : 'Suma de los meses seleccionados'}</p>}>

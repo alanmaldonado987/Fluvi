@@ -1,4 +1,3 @@
-import { LoaderCircle } from 'lucide-react'
 import { useEffect, useMemo, useReducer, useRef } from 'react'
 import { toast } from 'sonner'
 import { movimientoDesdeRecurrente } from '@/lib/calc'
@@ -171,8 +170,21 @@ export function FinanceProvider({ children }) {
 
   if (usuario && !state.cargado) {
     return (
-      <div className="grid min-h-svh place-items-center text-muted-foreground" role="status" aria-live="polite">
-        <LoaderCircle className="size-8 animate-spin text-leaf" aria-hidden="true" />
+      <div className="min-h-svh md:grid md:grid-cols-[16rem_minmax(0,1fr)]" role="status" aria-live="polite">
+        <div className="hidden border-r bg-card md:block" aria-hidden="true" />
+        <div className="mx-auto grid w-full max-w-[1800px] content-start gap-5 px-4 pt-16 md:px-6 md:py-6 xl:px-10" aria-hidden="true">
+          <div className="h-9 w-44 animate-pulse rounded-xl bg-muted" />
+          <div className="grid grid-cols-2 gap-3 xl:grid-cols-5">
+            <div className="col-span-2 h-28 animate-pulse rounded-2xl bg-muted" />
+            <div className="h-28 animate-pulse rounded-2xl bg-muted" />
+            <div className="h-28 animate-pulse rounded-2xl bg-muted" />
+            <div className="col-span-2 h-28 animate-pulse rounded-2xl bg-muted xl:col-span-1" />
+          </div>
+          <div className="grid gap-5 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+            <div className="h-72 animate-pulse rounded-2xl bg-muted" />
+            <div className="h-72 animate-pulse rounded-2xl bg-muted" />
+          </div>
+        </div>
         <span className="sr-only">Cargando tus datos</span>
       </div>
     )

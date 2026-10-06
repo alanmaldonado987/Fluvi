@@ -1,4 +1,4 @@
-import { Pencil, Trash2, Wallet } from 'lucide-react'
+import { Layers, Pencil, Star, Trash2, TrendingDown, TrendingUp, Wallet } from 'lucide-react'
 import { useState } from 'react'
 import { BilleteraCard } from '@/components/BilleteraCard'
 import { BarrasMensuales } from '@/components/charts/BarrasMensuales'
@@ -38,10 +38,10 @@ export default function Billeteras() {
         <PeriodoPicker />
       </PageHeader>
       <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-        <StatCard label={`Total en ${etiquetaPeriodo(mes, anio).toLowerCase()}`} value={total} tone="positive" />
-        <StatCard label="Frente al mes anterior" value={diferencia ?? 0} signo tone={diferencia == null ? undefined : diferencia < 0 ? 'negative' : 'positive'} hint={diferencia == null ? 'Sin mes anterior disponible' : `Cierre de ${mes > 0 ? MESES[mes - 1].toLowerCase() : `diciembre ${anio - 1}`}`} />
-        <StatCard label="Billetera principal" value={principal?.nombre ?? 'Sin billeteras'} hint={principal ? formatCOP(principal.saldo) : undefined} />
-        <StatCard label="Billeteras activas" value={String(state.billeteras.length)} />
+        <StatCard icon={Wallet} label={`Total en ${etiquetaPeriodo(mes, anio).toLowerCase()}`} value={total} tone="positive" />
+        <StatCard icon={diferencia < 0 ? TrendingDown : TrendingUp} label="Frente al mes anterior" value={diferencia ?? 0} signo tone={diferencia == null ? undefined : diferencia < 0 ? 'negative' : 'positive'} hint={diferencia == null ? 'Sin mes anterior disponible' : `Cierre de ${mes > 0 ? MESES[mes - 1].toLowerCase() : `diciembre ${anio - 1}`}`} />
+        <StatCard icon={Star} label="Billetera principal" value={principal?.nombre ?? 'Sin billeteras'} hint={principal ? formatCOP(principal.saldo) : undefined} />
+        <StatCard icon={Layers} label="Billeteras activas" value={String(state.billeteras.length)} />
       </div>
       <div className="grid gap-5 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <section className="grid content-start gap-4">

@@ -1,5 +1,6 @@
 import { Bar, BarChart, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { useFormatoMoneda } from '@/lib/privado'
+import { animacionGrafico } from '@/lib/motion'
 import { estiloTooltip } from './tooltip'
 
 export function BarrasComparativas({ filas, etiquetaReal = 'Real' }) {
@@ -10,9 +11,9 @@ export function BarrasComparativas({ filas, etiquetaReal = 'Real' }) {
         <XAxis type="number" hide />
         <YAxis type="category" dataKey="nombre" width={108} axisLine={false} tickLine={false} tick={{ fontSize: 13, fill: 'var(--muted-foreground)' }} />
         <Tooltip formatter={formatear} contentStyle={estiloTooltip} cursor={{ fill: 'var(--muted)' }} />
-        <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
-        <Bar dataKey="proyectado" name="Proyectado" fill="var(--chart-5)" radius={[0, 6, 6, 0]} barSize={8} isAnimationActive={false} />
-        <Bar dataKey="real" name={etiquetaReal} fill="var(--forest)" radius={[0, 6, 6, 0]} barSize={8} isAnimationActive={false} />
+        <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12 }} />
+        <Bar dataKey="proyectado" name="Proyectado" fill="var(--chart-5)" radius={[0, 6, 6, 0]} barSize={8} {...animacionGrafico} />
+        <Bar dataKey="real" name={etiquetaReal} fill="var(--forest)" radius={[0, 6, 6, 0]} barSize={8} {...animacionGrafico} />
       </BarChart>
     </ResponsiveContainer>
   )

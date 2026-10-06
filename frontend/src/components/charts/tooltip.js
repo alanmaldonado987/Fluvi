@@ -1,1 +1,1 @@
-export const estiloTooltip = { borderRadius: 12, border: '1px solid var(--border)', backgroundColor: 'var(--popover)', color: 'var(--foreground)', boxShadow: 'none', fontSize: 13 }
+export const estiloTooltip = { borderRadius: 14, border: '1px solid var(--border)', backgroundColor: 'var(--popover)', color: 'var(--foreground)', boxShadow: 'var(--sombra-elevada)', fontSize: 13, padding: '8px 12px' }

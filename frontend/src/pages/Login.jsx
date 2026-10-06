@@ -69,7 +69,16 @@ export default function Login() {
   }
 
   return (
-    <main className="grid min-h-svh lg:grid-cols-[1.1fr_1fr]">
+    <main className="grid min-h-svh grid-rows-[auto_1fr] lg:grid-cols-[1.1fr_1fr] lg:grid-rows-1">
+      {/* En móvil, una franja con la misma imagen mantiene la identidad del panel de escritorio. */}
+      <section className="relative flex h-60 flex-col overflow-hidden bg-[#1d3f2c] px-6 pt-6 pb-12 text-white lg:hidden">
+        <img src="/login-ahorro.jpg" alt="" className="absolute inset-0 size-full object-cover object-[45%_center]" />
+        <span aria-hidden="true" className="absolute inset-0 bg-linear-to-t from-[#1d3f2c] via-[#1d3f2c]/50 to-[#1d3f2c]/20" />
+        <Logo tono="oscuro" className="relative self-start" />
+        <p className={cn('relative mt-auto font-heading text-3xl leading-tight font-bold tracking-tight text-balance', entrada)} style={retraso(100)}>
+          Tus finanzas, en flujo.
+        </p>
+      </section>
       <section className="relative hidden overflow-hidden bg-[#1d3f2c] p-12 text-white lg:flex lg:flex-col">
         {/* Video de monedas llenando un frasco (Pexels, licencia libre). Con movimiento reducido queda la imagen fija. */}
         {sinMovimiento ? (
@@ -86,21 +95,20 @@ export default function Login() {
         </div>
       </section>
 
-      <section className="relative flex items-center justify-center p-6 pb-12">
+      <section className="relative -mt-6 flex items-start justify-center rounded-t-3xl bg-background p-6 pt-8 pb-12 lg:mt-0 lg:items-center lg:rounded-none lg:pt-6">
         <form onSubmit={enviar} className={cn('w-full max-w-sm', entrada)} style={retraso(150)}>
-          <Logo className="mb-8 lg:hidden" />
           <h1 className="text-2xl">{t.titulo}</h1>
           {t.detalle ? <p className="mt-1 text-sm text-muted-foreground">{t.detalle}</p> : null}
           <div className="mt-8 grid gap-4">
             {modo === 'registrar' ? (
               <div className="grid gap-1.5">
                 <Label htmlFor="nombre">Nombre</Label>
-                <Input id="nombre" autoComplete="name" required maxLength={80} value={nombre} onChange={(e) => setNombre(e.target.value)} />
+                <Input id="nombre" className="h-11" autoComplete="name" required maxLength={80} value={nombre} onChange={(e) => setNombre(e.target.value)} />
               </div>
             ) : null}
             <div className="grid gap-1.5">
               <Label htmlFor="email">Correo</Label>
-              <Input id="email" type="email" autoComplete="email" required maxLength={120} placeholder="tu@correo.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+              <Input id="email" className="h-11" type="email" autoComplete="email" required maxLength={120} placeholder="tu@correo.com" value={email} onChange={(e) => setEmail(e.target.value)} />
             </div>
             {modo === 'recuperar' ? null : (
               <div className="grid gap-1.5">
@@ -113,13 +121,13 @@ export default function Login() {
                   ) : null}
                 </div>
                 <div className="relative">
-                  <Input id="clave" type={verClave ? 'text' : 'password'} autoComplete={modo === 'registrar' ? 'new-password' : 'current-password'} required minLength={6} maxLength={72} className="pr-11" value={clave} onChange={(e) => setClave(e.target.value)} />
+                  <Input id="clave" type={verClave ? 'text' : 'password'} autoComplete={modo === 'registrar' ? 'new-password' : 'current-password'} required minLength={6} maxLength={72} className="h-11 pr-11" value={clave} onChange={(e) => setClave(e.target.value)} />
                   <button
                     type="button"
                     aria-label={verClave ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                     aria-pressed={verClave}
                     onClick={() => setVerClave((v) => !v)}
-                    className="absolute top-1/2 right-1 grid size-8 -translate-y-1/2 place-items-center rounded-md text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+                    className="absolute top-1/2 right-1.5 grid size-8 -translate-y-1/2 place-items-center rounded-md text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
                   >
                     {verClave ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                   </button>

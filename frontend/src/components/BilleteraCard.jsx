@@ -6,23 +6,23 @@ import { cn } from '@/lib/utils'
 export function BilleteraCard({ billetera, saldo, anterior, actividad, acciones, className, style }) {
   const delta = anterior == null ? null : saldo - anterior
   return (
-    <li className={cn('rounded-2xl bg-card p-4 ring-1 ring-border', className)} style={style}>
+    <li className={cn('con-acciones superficie p-4', className)} style={style}>
       <div className="flex items-center gap-3">
         <span className="grid size-10 place-items-center rounded-full bg-mint text-forest" aria-hidden="true">
           {iconoBilletera(billetera.nombre)}
         </span>
         <p className="min-w-0 flex-1 truncate font-semibold">{billetera.nombre}</p>
-        {acciones}
+        <span className="acciones-hover">{acciones}</span>
       </div>
-      <p className="mt-4 flex h-12 items-center text-xl font-bold"><Money value={saldo} /></p>
-      <p className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
+      <p className="mt-4 flex h-12 items-center text-2xl font-bold tracking-tight"><Money value={saldo} /></p>
+      <p className={cn('mt-2 inline-flex items-center gap-1 rounded-full text-xs', delta ? cn('px-2 py-0.5 font-medium', delta > 0 ? 'bg-positive-soft text-positive' : 'bg-negative-soft text-negative') : 'text-muted-foreground')}>
         {delta == null ? (
           'Sin saldo del mes anterior'
         ) : delta === 0 ? (
           'Igual que el mes anterior'
         ) : (
           <>
-            {delta > 0 ? <TrendingUp className="size-3.5 text-positive" aria-hidden="true" /> : <TrendingDown className="size-3.5 text-negative" aria-hidden="true" />}
+            {delta > 0 ? <TrendingUp className="size-3.5" aria-hidden="true" /> : <TrendingDown className="size-3.5" aria-hidden="true" />}
             <Money value={Math.abs(delta)} /> {delta > 0 ? 'más' : 'menos'} que el mes anterior
           </>
         )}

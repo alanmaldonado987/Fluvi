@@ -14,7 +14,7 @@ export function MovimientoItem({ movimiento, categoria, icono = categoria, bille
   const transferencia = movimiento.tipo === 'Transferencia'
   const nombre = movimiento.concepto || (transferencia ? 'Transferencia' : categoria)
   return (
-    <li className={cn('flex items-center gap-2', tabla && cn('md:grid md:gap-4', columnasMovimiento), className)} style={style}>
+    <li className={cn('con-acciones flex items-center gap-2', tabla && cn('md:grid md:gap-4', columnasMovimiento), className)} style={style}>
       <button type="button" onClick={onEditar} className={cn('flex min-w-0 flex-1 items-center gap-3 rounded-xl px-1 py-2 text-left transition-colors hover:bg-muted/60', foco)}>
         <CategoriaIcono nombre={icono} tipo={movimiento.tipo} />
         <span className="min-w-0 flex-1">
@@ -37,7 +37,7 @@ export function MovimientoItem({ movimiento, categoria, icono = categoria, bille
         </>
       ) : null}
       <Money value={movimiento.valor} tone={ingreso ? 'positive' : 'neutral'} signo={ingreso} className={cn('shrink-0 font-bold', transferencia && 'text-muted-foreground', tabla && 'md:text-right')} />
-      <span className="flex shrink-0 items-center justify-end">
+      <span className={cn('flex shrink-0 items-center justify-end', (tabla || onEliminar) && 'acciones-hover')}>
         <ChevronRight className={cn('size-4 text-muted-foreground', (tabla || onEliminar) && 'md:hidden')} aria-hidden="true" />
         {tabla ? (
           <Button variant="ghost" size="icon" className="hidden size-8 md:inline-flex" aria-label={`Editar ${nombre}`} onClick={onEditar}>

@@ -1,5 +1,6 @@
 import { Bar, BarChart, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { useFormatoMoneda } from '@/lib/privado'
+import { animacionGrafico } from '@/lib/motion'
 import { estiloTooltip } from './tooltip'
 
 export function BarrasCategorias({ datos }) {
@@ -10,7 +11,7 @@ export function BarrasCategorias({ datos }) {
         <XAxis type="number" hide />
         <YAxis type="category" dataKey="nombre" width={104} axisLine={false} tickLine={false} tick={{ fontSize: 13, fill: 'var(--muted-foreground)' }} />
         <Tooltip formatter={formatear} contentStyle={estiloTooltip} cursor={{ fill: 'var(--muted)' }} />
-        <Bar dataKey="valor" name="Egresos" fill="var(--leaf)" radius={[0, 8, 8, 0]} barSize={16} isAnimationActive={false}>
+        <Bar dataKey="valor" name="Egresos" fill="var(--leaf)" radius={[0, 8, 8, 0]} barSize={16} background={{ fill: 'var(--muted)', radius: 8 }} {...animacionGrafico}>
           <LabelList dataKey="valor" position="right" formatter={formatear} fill="var(--foreground)" fontSize={12} />
         </Bar>
       </BarChart>

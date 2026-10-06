@@ -1,21 +1,19 @@
-import { ArrowRight, Waves } from 'lucide-react'
+import { Waves } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { BarrasMensuales } from '@/components/charts/BarrasMensuales'
+import { Cascada } from '@/components/charts/Cascada'
 import { EmptyState } from '@/components/EmptyState'
 import { FilaCategoria } from '@/components/FilaCategoria'
 import { Money } from '@/components/Money'
 import { PageHeader } from '@/components/PageHeader'
 import { Panel } from '@/components/Panel'
 import { PeriodoPicker } from '@/components/PeriodPickers'
-import { StatCard } from '@/components/StatCard'
 import { buttonVariants } from '@/components/ui/button'
 import { esMesUnico, flujoAnio, flujoMes, flujoMulti, serieSaldos, totalesFilas } from '@/lib/calc'
 import { etiquetaPeriodo } from '@/lib/format'
 import { entrada, escalonado } from '@/lib/motion'
 import { cn } from '@/lib/utils'
 import { useFinance } from '@/store/context'
-
-const Flecha = () => <ArrowRight className="mx-auto size-5 rotate-90 text-muted-foreground sm:rotate-0" aria-hidden="true" />
 
 function Seccion({ titulo, filas, totales, columnas = false }) {
   return (
@@ -44,6 +42,12 @@ export default function FlujoCaja() {
   const ti = totalesFilas(ingresos)
   const te = totalesFilas(egresos)
   const saldoFinal = saldoInicial + ti.real - te.real
+  const pasos = [
+    { clave: 'inicial', label: 'Saldo inicial', valor: saldoInicial, desde: 0, hasta: saldoInicial, color: 'var(--chart-5)' },
+    { clave: 'ingresos', label: anual ? 'Ingresos del año' : 'Ingresos del mes', valor: ti.real, tone: 'positive', desde: saldoInicial, hasta: saldoInicial + ti.real, color: 'var(--leaf)' },
+    { clave: 'egresos', label: anual ? 'Egresos del año' : 'Egresos del mes', valor: te.real, desde: saldoInicial + ti.real, hasta: saldoFinal, color: 'var(--chart-3)' },
+    { clave: 'final', label: 'Saldo final', valor: saldoFinal, final: true, desde: 0, hasta: saldoFinal, color: 'var(--forest)' },
+  ]
   const descripcion = unico ? 'Cómo se mueve tu dinero durante el mes.' : etiquetaPeriodo(state.mes, state.anio)
 
   return (
@@ -59,15 +63,22 @@ export default function FlujoCaja() {
         </EmptyState>
       ) : (
         <>
-          <div className="grid items-center gap-2 sm:grid-cols-[1fr_auto_1fr_auto_1fr_auto_1fr]">
-            <StatCard label="Saldo inicial" value={saldoInicial} className={entrada} style={escalonado(0)} />
-            <Flecha />
-            <StatCard label={anual ? 'Ingresos del año' : 'Ingresos del mes'} value={ti.real} tone="positive" className={entrada} style={escalonado(1)} />
-            <Flecha />
-            <StatCard label={anual ? 'Egresos del año' : 'Egresos del mes'} value={te.real} className={entrada} style={escalonado(2)} />
-            <Flecha />
-            <StatCard label="Saldo final" value={saldoFinal} destacado className={entrada} style={escalonado(3)} />
-          </div>
+          <Panel className={entrada}>
+            <ul className="grid grid-cols-2 gap-x-3 gap-y-4 sm:grid-cols-4">
+              {pasos.map((p) => (
+                <li key={p.clave} className="min-w-0 sm:text-center">
+                  <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground sm:justify-center md:text-sm">
+                    <span className="size-2 shrink-0 rounded-full" style={{ background: p.color }} aria-hidden="true" />
+                    {p.label}
+                  </p>
+                  <Money value={p.valor} tone={p.tone} className={cn('mt-1 block text-lg font-bold tracking-tight md:text-2xl', p.final && 'text-forest')} />
+                </li>
+              ))}
+            </ul>
+            <div className="mt-4">
+              <Cascada pasos={pasos} />
+            </div>
+          </Panel>
           <div className="grid gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
             <Seccion titulo="Ingresos" filas={ingresos} totales={ti} />
             <Seccion titulo="Egresos" filas={egresos} totales={te} columnas />

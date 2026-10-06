@@ -1,4 +1,4 @@
-import { Check, HandCoins, Pencil, Plus, Trash2 } from 'lucide-react'
+import { Check, CircleCheck, Clock, HandCoins, Pencil, Plus, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { DeudaDialog } from '@/components/DeudaDialog'
@@ -7,12 +7,23 @@ import { Money } from '@/components/Money'
 import { PageHeader } from '@/components/PageHeader'
 import { Panel } from '@/components/Panel'
 import { PeriodoPicker } from '@/components/PeriodPickers'
+import { Progreso } from '@/components/Progreso'
 import { StatCard } from '@/components/StatCard'
 import { Button } from '@/components/ui/button'
 import { esMesUnico, movsFiltrados, nombreBilletera } from '@/lib/calc'
 import { etiquetaPeriodo, fechaCorta } from '@/lib/format'
 import { entrada, escalonado } from '@/lib/motion'
+import { cn } from '@/lib/utils'
 import { useFinance } from '@/store/context'
+
+const iniciales = (nombre) =>
+  nombre
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((p) => p[0])
+    .join('')
+    .toUpperCase()
 
 export default function Deudas() {
   const { state, actions } = useFinance()
@@ -51,15 +62,15 @@ export default function Deudas() {
       </PageHeader>
 
       <div className="grid grid-cols-2 gap-3 xl:grid-cols-3">
-        <StatCard label="Por cobrar" value={totalPorCobrar} tone="negative" />
-        <StatCard label="Deudas pendientes" value={String(pendientes.length)} />
-        <StatCard label={`Cobrado en ${etiquetaPeriodo(mes, anio).toLowerCase()}`} value={cobradoEnPeriodo} tone="positive" />
+        <StatCard icon={HandCoins} label="Por cobrar" value={totalPorCobrar} />
+        <StatCard icon={Clock} label="Deudas pendientes" value={String(pendientes.length)} />
+        <StatCard icon={CircleCheck} label={`Cobrado en ${etiquetaPeriodo(mes, anio).toLowerCase()}`} value={cobradoEnPeriodo} tone="positive" />
       </div>
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <section className="grid content-start gap-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Pendientes</h2>
+            <h2 className="text-base">Pendientes</h2>
             <Button size="sm" onClick={() => setDialog({ modo: 'prestar' })}>
               <Plus className="size-4" /> Nuevo préstamo
             </Button>
@@ -71,14 +82,17 @@ export default function Deudas() {
                 const abonado = abonosPorDeuda[d.id] || 0
                 const restante = d.valor - abonado
                 return (
-                  <li key={d.id} className={`rounded-2xl bg-card p-4 ring-1 ring-border ${entrada}`} style={escalonado(i)}>
+                  <li key={d.id} className={cn('superficie p-4', entrada)} style={escalonado(i)}>
                     <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
+                      <span className="grid size-10 shrink-0 place-items-center rounded-full bg-mint text-sm font-bold text-forest" aria-hidden="true">
+                        {iniciales(d.persona)}
+                      </span>
+                      <div className="min-w-0 flex-1">
                         <p className="truncate font-semibold">{d.persona}</p>
-                        <Money value={restante} className="text-xl font-bold" />
+                        <Money value={restante} className="text-xl font-bold tracking-tight" />
                       </div>
                       <span className="flex shrink-0">
-                        <Button variant="ghost" size="icon" className="size-8 text-positive" aria-label={`Cobrar a ${d.persona}`} onClick={() => setDialog({ modo: 'cobrar', deuda: d })}>
+                        <Button variant="ghost" size="icon" className="size-8 bg-positive-soft text-positive hover:bg-positive/15 hover:text-positive" aria-label={`Cobrar a ${d.persona}`} onClick={() => setDialog({ modo: 'cobrar', deuda: d })}>
                           <Check />
                         </Button>
                         <Button variant="ghost" size="icon" className="size-8" aria-label={`Editar deuda de ${d.persona}`} onClick={() => setDialog({ modo: 'editar', deuda: d })}>
@@ -90,14 +104,16 @@ export default function Deudas() {
                       </span>
                     </div>
                     {abonado > 0 && (
-                      <div className="mt-2">
+                      <div className="mt-3">
                         <div className="flex justify-between text-xs text-muted-foreground">
-                          <span>Abonado: ${abonado.toLocaleString('es-CO')}</span>
-                          <span>de ${d.valor.toLocaleString('es-CO')}</span>
+                          <span>
+                            Abonado: <Money value={abonado} />
+                          </span>
+                          <span>
+                            de <Money value={d.valor} />
+                          </span>
                         </div>
-                        <div className="mt-1 h-1.5 rounded-full bg-muted">
-                          <div className="h-full rounded-full bg-leaf transition-all" style={{ width: `${Math.min(100, (abonado / d.valor) * 100)}%` }} />
-                        </div>
+                        <Progreso valor={abonado / d.valor} className="mt-1 h-1.5" />
                       </div>
                     )}
                     <p className="mt-2 text-xs text-muted-foreground">
@@ -117,7 +133,7 @@ export default function Deudas() {
           {pagadasEnPeriodo.length ? (
             <ul className="grid gap-3">
               {pagadasEnPeriodo.map((d) => (
-                <li key={d.id} className="flex items-center justify-between gap-2 rounded-xl bg-muted/50 px-3 py-2">
+                <li key={d.id} className="flex items-center justify-between gap-2 rounded-xl bg-muted/50 px-3 py-2.5">
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium">{d.persona}</p>
                     <p className="text-xs text-muted-foreground">{fechaCorta(d.fechaPago)}</p>

@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils'
 
-const tonos = { positive: 'bg-leaf', negative: 'bg-negative', neutral: 'bg-forest/40' }
+const tonos = { positive: 'bg-leaf', warning: 'bg-gold', negative: 'bg-negative', neutral: 'bg-forest/40' }
 
 export function Progreso({ valor, tone = 'positive', className }) {
   const escala = Math.min(Math.max(valor, 0), 1)

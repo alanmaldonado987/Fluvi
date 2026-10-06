@@ -50,11 +50,22 @@ export default function Importar() {
   const [nombres, setNombres] = useState({})
   const [ocupado, setOcupado] = useState(false)
   const [error, setError] = useState(null)
+  const [arrastrando, setArrastrando] = useState(false)
 
-  const elegir = async (e) => {
+  const elegir = (e) => {
     const archivo = e.target.files?.[0]
     e.target.value = ''
-    if (!archivo) return
+    if (archivo) procesar(archivo)
+  }
+
+  const soltar = (e) => {
+    e.preventDefault()
+    setArrastrando(false)
+    const archivo = e.dataTransfer.files?.[0]
+    if (archivo && !ocupado) procesar(archivo)
+  }
+
+  const procesar = async (archivo) => {
     setError(null)
     setOcupado(true)
     try {
@@ -111,12 +122,25 @@ export default function Importar() {
 
   return (
     <div className="grid gap-5">
-      <PageHeader title="Importar desde Excel" description="Trae un año completo desde tu archivo de finanzas." />
+      <PageHeader title="Importar desde Excel" description="Trae un año completo desde tu archivo de finanzas." cifras={false} />
       <Panel>
         <p className="max-w-2xl text-sm text-muted-foreground">
           Usa tu archivo de finanzas de siempre. Se crean las categorías, las subcategorías escritas como "Categoría / Subcategoría", las billeteras, el presupuesto y los movimientos del año que elijas. Lo que ya exista con el mismo nombre se reutiliza.
         </p>
-        <div className="mt-4 flex flex-wrap items-center gap-3">
+        <div
+          onDragOver={(e) => {
+            e.preventDefault()
+            setArrastrando(true)
+          }}
+          onDragLeave={(e) => {
+            if (!e.currentTarget.contains(e.relatedTarget)) setArrastrando(false)
+          }}
+          onDrop={soltar}
+          className={cn('mt-4 flex flex-col items-center gap-3 rounded-2xl border-2 border-dashed px-6 py-8 text-center transition-colors duration-150', arrastrando ? 'border-leaf bg-mint/50' : 'border-border bg-muted/30')}
+        >
+          <span className="grid size-12 place-items-center rounded-full bg-mint text-forest" aria-hidden="true">
+            <FileSpreadsheet className="size-6" />
+          </span>
           <input ref={entradaArchivo} type="file" accept=".xlsx,.xlsm,.xls" className="sr-only" onChange={elegir} aria-label="Archivo de Excel" />
           <Button variant="secondary" onClick={() => entradaArchivo.current?.click()} disabled={ocupado}>
             {ocupado && !lectura ? <LoaderCircle className="animate-spin" aria-hidden="true" /> : <Upload />}

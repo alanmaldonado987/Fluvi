@@ -6,11 +6,13 @@ import { MoneyInput } from '@/components/MoneyInput'
 import { SelectField } from '@/components/SelectField'
 import { SelectorCategoria } from '@/components/SelectorCategoria'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { separarCategoria } from '@/lib/calc'
 import { hoy } from '@/lib/format'
+import { cn } from '@/lib/utils'
 import { useFinance } from '@/store/context'
 
 const SIN_BILLETERA = 'ninguna'
@@ -44,7 +46,7 @@ function Formulario({ inicial, onGuardar, onEliminar }) {
         </TabsList>
       </Tabs>
       <Campo label="Valor">
-        <MoneyInput autoFocus className="h-14 text-2xl font-bold" value={datos.valor} onValueChange={set('valor')} />
+        <MoneyInput autoFocus className={cn('h-16 rounded-xl border-transparent bg-muted/70 text-center text-3xl font-bold tracking-tight dark:bg-input/30', datos.tipo === 'Ingreso' && 'text-positive', datos.tipo === 'Transferencia' && 'text-muted-foreground')} value={datos.valor} onValueChange={set('valor')} />
       </Campo>
       <div className="grid grid-cols-2 gap-3">
         {transferencia ? (
@@ -92,8 +94,8 @@ function Formulario({ inicial, onGuardar, onEliminar }) {
       {inicial ? (
         <HistorialMovimiento movimientoId={inicial.id} />
       ) : transferencia ? null : (
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" className="size-4 accent-leaf" checked={repetir} onChange={(e) => setRepetir(e.target.checked)} />
+        <label className="flex items-center gap-2.5 text-sm">
+          <Checkbox checked={repetir} onCheckedChange={setRepetir} />
           Repetir cada mes el día {Number(datos.fecha.slice(8, 10)) || ''}
         </label>
       )}
@@ -115,7 +117,7 @@ function Formulario({ inicial, onGuardar, onEliminar }) {
 export function MovimientoDialog({ open, onOpenChange, movimiento, onGuardar, onEliminar }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md max-sm:top-auto max-sm:bottom-0 max-sm:max-w-full max-sm:translate-y-0 max-sm:rounded-b-none max-sm:duration-300 max-sm:ease-drawer max-sm:data-open:zoom-in-100 max-sm:data-open:slide-in-from-bottom-8 max-sm:data-closed:zoom-out-100 max-sm:data-closed:slide-out-to-bottom-8">
+      <DialogContent className="sm:max-w-md max-sm:top-auto max-sm:bottom-0 max-sm:max-w-full max-sm:translate-y-0 max-sm:rounded-t-3xl max-sm:rounded-b-none max-sm:pt-7 max-sm:before:absolute max-sm:before:top-2.5 max-sm:before:left-1/2 max-sm:before:h-1 max-sm:before:w-10 max-sm:before:-translate-x-1/2 max-sm:before:rounded-full max-sm:before:bg-border max-sm:[&_[data-slot=dialog-footer]]:rounded-b-none max-sm:[&_[data-slot=dialog-footer]]:pb-[calc(env(safe-area-inset-bottom)+1rem)] max-sm:duration-300 max-sm:ease-drawer max-sm:data-open:zoom-in-100 max-sm:data-open:slide-in-from-bottom-8 max-sm:data-closed:zoom-out-100 max-sm:data-closed:slide-out-to-bottom-8">
         <DialogHeader>
           <DialogTitle>{movimiento ? 'Editar movimiento' : 'Nuevo movimiento'}</DialogTitle>
         </DialogHeader>

@@ -1,4 +1,5 @@
-import { AlertTriangle, ChartPie, FileSpreadsheet, Plus, Sparkles } from 'lucide-react'
+import { Anillo } from '@/components/Anillo'
+import { AlertTriangle, ArrowDownLeft, ArrowUpRight, ChartPie, FileSpreadsheet, PiggyBank, Plus, Sparkles, Wallet } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { BotonFlotante } from '@/components/BotonFlotante'
 import { BarrasCategorias } from '@/components/charts/BarrasCategorias'
@@ -33,7 +34,9 @@ function Alertas({ lista, hayMovimientos }) {
   if (lista.length === 0) {
     return (
       <p className="flex items-center gap-3 rounded-2xl bg-positive-soft px-4 py-3 text-sm font-semibold text-positive">
-        <Sparkles className="size-5 shrink-0" aria-hidden="true" />
+        <span className="grid size-8 shrink-0 place-items-center rounded-full bg-positive/15">
+          <Sparkles className="size-4" aria-hidden="true" />
+        </span>
         Mes saludable: todos los egresos están dentro del presupuesto.
       </p>
     )
@@ -114,11 +117,11 @@ export default function Dashboard() {
         </EmptyState>
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-            <StatCard destacado label="Saldo en billeteras" value={saldoVivoBilleteras(state, mesVivo)} hint={`${billeteras.length} ${billeteras.length === 1 ? 'billetera' : 'billeteras'}`} className={entrada} style={escalonado(0)} />
-            <StatCard label="Ingresos" value={ingresos} tone="positive" hint={`${cuentaIngresos} ${cuentaIngresos === 1 ? 'registrado' : 'registrados'}`} className={entrada} style={escalonado(1)} />
-            <StatCard label="Egresos" value={egresos} hint={te.proyectado ? `${Math.round(avance(te.proyectado, te.real) * 100)}% del presupuesto` : 'Sin presupuesto definido'} className={entrada} style={escalonado(2)} />
-            <StatCard label="Ahorro neto" value={neto} tone={neto < 0 ? 'negative' : 'positive'} hint={tasaAhorro == null ? 'Sin ingresos' : `${tasaAhorro}% de los ingresos`} className={entrada} style={escalonado(3)} />
+          <div className="grid grid-cols-2 gap-3 xl:grid-cols-5">
+            <StatCard destacado grande icon={Wallet} label="Saldo en billeteras" value={saldoVivoBilleteras(state, mesVivo)} hint={`${billeteras.length} ${billeteras.length === 1 ? 'billetera' : 'billeteras'}`} className={cn('col-span-2', entrada)} style={escalonado(0)} />
+            <StatCard label="Ingresos" icon={ArrowDownLeft} value={ingresos} tone="positive" hint={`${cuentaIngresos} ${cuentaIngresos === 1 ? 'registrado' : 'registrados'}`} className={entrada} style={escalonado(1)} />
+            <StatCard label="Egresos" icon={ArrowUpRight} value={egresos} hint={te.proyectado ? `${Math.round(avance(te.proyectado, te.real) * 100)}% del presupuesto` : 'Sin presupuesto definido'} className={entrada} style={escalonado(2)} />
+            <StatCard label="Ahorro neto" icon={PiggyBank} value={neto} tone={neto < 0 ? 'negative' : 'positive'} hint={tasaAhorro == null ? 'Sin ingresos' : `${tasaAhorro}% de los ingresos`} className={cn('col-span-2 xl:col-span-1', entrada)} style={escalonado(3)} />
           </div>
 
           {usuario.preferencias.alertasPresupuesto ? <Alertas lista={excedidas(filasEgresos)} hayMovimientos={movs.length > 0} /> : null}
@@ -137,14 +140,14 @@ export default function Dashboard() {
                 {state.metas.slice(0, 3).map((meta, i) => {
                   const p = progresoMeta(state, meta)
                   return (
-                    <li key={meta.id} className={entrada} style={escalonado(i)}>
-                      <div className="flex justify-between gap-3 text-sm">
-                        <span className="truncate font-semibold">{meta.nombre}</span>
-                        <span className="shrink-0 text-muted-foreground">
+                    <li key={meta.id} className={cn('flex items-center gap-3', entrada)} style={escalonado(i)}>
+                      <Anillo valor={p.avance} tone={p.vencida ? 'negative' : 'positive'} />
+                      <div className="min-w-0 text-sm">
+                        <p className="truncate font-semibold">{meta.nombre}</p>
+                        <p className="truncate text-muted-foreground">
                           <Money value={p.ahorrado} className="font-semibold text-foreground" /> de <Money value={meta.objetivo} />
-                        </span>
+                        </p>
                       </div>
-                      <Progreso valor={p.avance} className="mt-2" />
                     </li>
                   )
                 })}
@@ -225,7 +228,7 @@ export default function Dashboard() {
                 <ul className="divide-y">
                   {billeteras.map((b, i) => (
                     <li key={b.id} className={cn('flex items-center gap-3 py-2.5', entrada)} style={escalonado(i)}>
-                      <span className="grid size-9 shrink-0 place-items-center rounded-full bg-mint text-forest" aria-hidden="true">
+                      <span className="grid size-10 shrink-0 place-items-center rounded-full bg-mint text-forest" aria-hidden="true">
                         {iconoBilletera(b.nombre)}
                       </span>
                       <span className="min-w-0 flex-1 truncate font-semibold">{b.nombre}</span>
