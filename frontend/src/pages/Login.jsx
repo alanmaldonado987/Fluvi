@@ -44,6 +44,10 @@ export default function Login() {
   const cambiarModo = (nuevo) => {
     setModo(nuevo)
     setAviso(null)
+    setNombre('')
+    setEmail('')
+    setClave('')
+    setVerClave(false)
   }
 
   const enviar = async (e) => {
