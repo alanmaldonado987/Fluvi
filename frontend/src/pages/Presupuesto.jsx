@@ -1,7 +1,7 @@
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, rectSortingStrategy, useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { CalendarRange, ChartPie, ChevronDown, CircleCheck, ListTree, MoreHorizontal, Pencil, PiggyBank, Plus, Target, Trash2, TrendingUp, Wallet } from 'lucide-react'
+import { CalendarRange, ChartPie, ChevronDown, CircleCheck, ClipboardList, ListTree, MoreHorizontal, Pencil, PiggyBank, Plus, Trash2, TrendingUp, Wallet } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { BarrasComparativas } from '@/components/charts/BarrasComparativas'
@@ -267,7 +267,7 @@ export default function Presupuesto() {
           ) : (
             <>
           <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-            <StatCard icon={Target} label={`Proyectado en ${etiquetaPeriodo(mes, state.anio).toLowerCase()}`} value={t.proyectado} />
+            <StatCard icon={ClipboardList} label={`Proyectado en ${etiquetaPeriodo(mes, state.anio).toLowerCase()}`} value={t.proyectado} />
             <StatCard icon={TrendingUp} label={egreso ? 'Gastado' : 'Recibido'} value={t.real} tone={egreso && t.real > t.proyectado ? 'negative' : 'positive'} hint={`${porcentaje}% de lo proyectado`} />
             <StatCard icon={Wallet} label={egreso ? 'Disponible' : 'Pendiente por recibir'} value={Math.max(t.diferencia, 0)} tone={egreso && t.diferencia < 0 ? 'negative' : undefined} hint={egreso && t.diferencia < 0 ? 'Presupuesto agotado' : undefined} />
             <StatCard icon={CircleCheck} label={egreso ? 'Categorías excedidas' : 'Categorías completas'} value={`${cumplidas} de ${filas.length}`} />
