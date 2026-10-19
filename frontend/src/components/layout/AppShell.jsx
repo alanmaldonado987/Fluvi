@@ -1,10 +1,12 @@
-import { ArrowLeftRight, ChartPie, HandCoins, House, PanelLeftClose, PanelLeftOpen, Wallet, Waves } from 'lucide-react'
+import { ArrowLeftRight, ChartPie, Ellipsis, HandCoins, House, PanelLeftClose, PanelLeftOpen, Wallet, Waves } from 'lucide-react'
 import { useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { BotonPrivado } from '@/components/BotonPrivado'
+import { Campana } from '@/components/Campana'
 import { Logo } from '@/components/Logo'
 import { Tutorial } from '@/components/Tutorial'
 import { Button } from '@/components/ui/button'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { UsuarioMenu } from '@/components/UsuarioMenu'
 import { entradaPagina } from '@/lib/motion'
 import { cn } from '@/lib/utils'
@@ -16,9 +18,48 @@ const rutas = [
   { to: '/movimientos', label: 'Movimientos', icon: ArrowLeftRight, tour: 'movimientos' },
   { to: '/presupuesto', label: 'Presupuesto', icon: ChartPie, tour: 'presupuesto' },
   { to: '/billeteras', label: 'Billeteras', icon: Wallet, tour: 'billeteras' },
-  { to: '/deudas', label: 'Deudas', icon: HandCoins, tour: 'deudas' },
-  { to: '/flujo', label: 'Flujo', icon: Waves, tour: 'flujo' },
+  { to: '/deudas', label: 'Deudas', icon: HandCoins, tour: 'deudas', secundaria: true },
+  { to: '/flujo', label: 'Flujo', icon: Waves, tour: 'flujo', secundaria: true },
 ]
+
+const rutasMovil = rutas.filter((r) => !r.secundaria)
+const rutasMas = rutas.filter((r) => r.secundaria)
+const pastilla = 'flex h-11 items-center rounded-full px-1.5 text-xs font-semibold transition-[background-color,color,padding] duration-300 ease-out'
+
+// En móvil solo caben cuatro destinos con comodidad: el resto va en "Más", que muestra el destino activo cuando estás en uno de ellos.
+function MasMovil({ pathname }) {
+  const [abierto, setAbierto] = useState(false)
+  const activa = rutasMas.find(({ to }) => pathname.startsWith(to))
+  const Icono = activa?.icon ?? Ellipsis
+  return (
+    <Popover open={abierto} onOpenChange={setAbierto}>
+      <PopoverTrigger data-tour="mas" aria-label={activa ? `Más: ${activa.label}` : 'Más secciones'} render={<button type="button" className={cn(pastilla, foco, activa ? 'bg-mint px-3 text-forest' : 'text-muted-foreground')} />}>
+        <Icono className="size-5 shrink-0" aria-hidden="true" />
+        <span className={cn('grid transition-[grid-template-columns] duration-300 ease-out', activa ? 'grid-cols-[1fr]' : 'grid-cols-[0fr]')}>
+          <span className="min-w-0 overflow-hidden whitespace-nowrap">
+            <span className="block pl-1.5">{activa?.label ?? 'Más'}</span>
+          </span>
+        </span>
+      </PopoverTrigger>
+      <PopoverContent side="top" align="end" sideOffset={12} className="w-48 p-1.5">
+        <ul className="grid gap-0.5">
+          {rutasMas.map(({ to, label, icon: Icon }) => (
+            <li key={to}>
+              <NavLink
+                to={to}
+                onClick={() => setAbierto(false)}
+                className={({ isActive }) => cn('flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors', foco, isActive ? 'bg-mint text-forest' : 'text-foreground hover:bg-muted')}
+              >
+                <Icon className="size-5 shrink-0" aria-hidden="true" />
+                {label}
+              </NavLink>
+            </li>
+          ))}
+        </ul>
+      </PopoverContent>
+    </Popover>
+  )
+}
 
 const CLAVE = 'fluvi:sidebar'
 // Alto de cada enlace del menú lateral (py-2.5 + ícono de 20px, o size-11 contraído) más el gap-1.
@@ -102,6 +143,7 @@ export function AppShell() {
       <header className="sticky top-0 z-20 flex items-center justify-between gap-3 bg-background/85 px-4 py-2.5 backdrop-blur-md md:hidden">
         <Logo />
         <span className="flex items-center gap-1">
+          <Campana className="size-9" />
           <BotonPrivado className="size-9" />
           <UsuarioMenu compacto onTutorial={() => setTutorial(true)} />
         </span>
@@ -115,15 +157,13 @@ export function AppShell() {
 
       <nav aria-label="Principal" className="fixed inset-x-2 bottom-[calc(env(safe-area-inset-bottom)+0.5rem)] z-20 md:hidden">
         <ul className="mx-auto flex w-fit max-w-full items-center rounded-full border bg-card/85 p-1.5 shadow-elevated backdrop-blur-md">
-          {rutas.map(({ to, label, icon: Icon, tour }) => (
+          {rutasMovil.map(({ to, label, icon: Icon, tour }) => (
             <li key={to}>
               <NavLink
                 to={to}
                 end={to === '/'}
                 data-tour={tour}
-                className={({ isActive }) =>
-                  cn('flex h-11 items-center rounded-full px-1.5 text-xs font-semibold transition-[background-color,color,padding] duration-300 ease-out', foco, isActive ? 'bg-mint px-3 text-forest' : 'text-muted-foreground')
-                }
+                className={({ isActive }) => cn(pastilla, foco, isActive ? 'bg-mint px-3 text-forest' : 'text-muted-foreground')}
               >
                 {({ isActive }) => (
                   <>
@@ -139,6 +179,9 @@ export function AppShell() {
               </NavLink>
             </li>
           ))}
+          <li>
+            <MasMovil pathname={pathname} />
+          </li>
         </ul>
       </nav>
       {tutorial ? <Tutorial onCerrar={cerrarTutorial} /> : null}

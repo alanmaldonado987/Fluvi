@@ -9,6 +9,7 @@ import { FormularioInline } from '@/components/FormularioInline'
 import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { MoneyInput } from '@/components/MoneyInput'
 import { Switch } from '@/components/ui/switch'
 import { exportarExcel } from '@/lib/excel'
 import { fechaLarga } from '@/lib/format'
@@ -28,6 +29,7 @@ const secciones = [
 
 const mensajesCuenta = {
   same_password: 'La contraseña nueva debe ser distinta a la anterior.',
+  invalid_credentials: 'La contraseña actual no es correcta.',
   weak_password: 'La contraseña debe tener al menos 6 caracteres.',
   email_exists: 'Ya existe una cuenta con ese correo.',
   over_email_send_rate_limit: 'Demasiados intentos. Espera un minuto y vuelve a probar.',
@@ -122,20 +124,20 @@ function Perfil() {
   )
 }
 
-function CampoClave({ label, valor, onChange, placeholder, valido }) {
+function CampoClave({ label, valor, onChange, placeholder, valido, autoComplete = 'new-password' }) {
   const [ver, setVer] = useState(false)
   return (
     <Campo label={label}>
-      <ClaveInput ver={ver} setVer={setVer} valor={valor} onChange={onChange} placeholder={placeholder} valido={valido} />
+      <ClaveInput ver={ver} setVer={setVer} valor={valor} onChange={onChange} placeholder={placeholder} valido={valido} autoComplete={autoComplete} />
     </Campo>
   )
 }
 
 // Campo pasa el id por cloneElement; aquí llega al input real.
-function ClaveInput({ id, ver, setVer, valor, onChange, placeholder, valido }) {
+function ClaveInput({ id, ver, setVer, valor, onChange, placeholder, valido, autoComplete }) {
   return (
     <div className="relative">
-      <Input id={id} type={ver ? 'text' : 'password'} autoComplete="new-password" minLength={MINIMO_CLAVE} maxLength={72} placeholder={placeholder} className="bg-card pr-18" value={valor} onChange={(e) => onChange(e.target.value)} />
+      <Input id={id} type={ver ? 'text' : 'password'} autoComplete={autoComplete} minLength={autoComplete === 'new-password' ? MINIMO_CLAVE : undefined} maxLength={72} placeholder={placeholder} className="bg-card pr-18" value={valor} onChange={(e) => onChange(e.target.value)} />
       <span className="absolute top-1/2 right-1.5 flex -translate-y-1/2 items-center gap-1">
         {valido ? <Check className={cn('size-4 text-positive', entrada)} aria-hidden="true" /> : null}
         <button
@@ -163,8 +165,9 @@ function FilaAccion({ icon: Icon, peligro = false, onClick, children }) {
 }
 
 function Seguridad() {
-  const { actualizar } = useAuth()
+  const { usuario, entrar, actualizar } = useAuth()
   const [cerrando, setCerrando] = useState(null)
+  const [actual, setActual] = useState('')
   const [clave, setClave] = useState('')
   const [confirmacion, setConfirmacion] = useState('')
   const [enviando, setEnviando] = useState(false)
@@ -174,8 +177,10 @@ function Seguridad() {
     e.preventDefault()
     setEnviando(true)
     try {
+      await entrar(usuario.email, actual)
       await actualizar({ password: clave })
       toast.success('Contraseña actualizada.')
+      setActual('')
       setClave('')
       setConfirmacion('')
     } catch (err) {
@@ -190,6 +195,7 @@ function Seguridad() {
       <Grupo titulo="Contraseña">
         <form onSubmit={cambiar}>
           <div className="grid gap-4 p-4 sm:p-5">
+            <CampoClave label="Contraseña actual" autoComplete="current-password" valor={actual} onChange={setActual} />
             <CampoClave label="Contraseña nueva" placeholder="Mínimo 6 caracteres" valor={clave} onChange={setClave} valido={clave.length >= MINIMO_CLAVE} />
             <CampoClave label="Repite la contraseña" valor={confirmacion} onChange={setConfirmacion} valido={coincide} />
             {confirmacion && !coincide ? (
@@ -200,7 +206,7 @@ function Seguridad() {
             ) : null}
           </div>
           <div className="flex justify-end border-t bg-muted/40 px-4 py-3 sm:px-5">
-            <Button type="submit" disabled={!coincide || enviando}>
+            <Button type="submit" disabled={!coincide || !actual || enviando}>
               {enviando ? <LoaderCircle className="animate-spin" aria-hidden="true" /> : null}
               Cambiar contraseña
             </Button>
@@ -242,12 +248,37 @@ function Umbral({ label, children }) {
   )
 }
 
+// Se puede escribir libremente (incluso vaciar el campo); el valor solo se aplica si está en rango y, al salir, se ajusta al límite.
+function InputUmbral({ id, valor, min, max, onChange, ...props }) {
+  const [texto, setTexto] = useState(String(valor))
+  const aplicar = (e) => {
+    setTexto(e.target.value)
+    const n = Number(e.target.value)
+    if (e.target.value !== '' && Number.isInteger(n) && n >= min && n <= max) onChange(n)
+  }
+  const cerrar = () => {
+    const n = Math.min(max, Math.max(min, Math.round(Number(texto)) || valor))
+    setTexto(String(n))
+    onChange(n)
+  }
+  return <Input id={id} type="number" inputMode="numeric" min={min} max={max} step={1} value={texto} onChange={aplicar} onBlur={cerrar} {...props} />
+}
+
 function Notificaciones() {
   const { usuario, actualizar } = useAuth()
   const [prefs, setPrefs] = useState(usuario.preferencias)
   const [guardando, setGuardando] = useState(false)
   const cambio = JSON.stringify(prefs) !== JSON.stringify(usuario.preferencias)
+  const { state } = useFinance()
   const set = (campo) => (valor) => setPrefs((p) => ({ ...p, [campo]: valor }))
+  // El mínimo en 0 se quita para no guardar claves vacías.
+  const fijarMinimo = (billeteraId, valor) =>
+    setPrefs((p) => {
+      const minimos = { ...p.saldoMinimo }
+      if (valor) minimos[billeteraId] = valor
+      else delete minimos[billeteraId]
+      return { ...p, saldoMinimo: minimos }
+    })
 
   const guardar = async () => {
     setGuardando(true)
@@ -264,19 +295,47 @@ function Notificaciones() {
   const numero = 'h-9 w-20 shrink-0 bg-card text-right tabular-nums'
   return (
     <>
-      <Grupo titulo="Avisos en Inicio">
-        <Interruptor label="Alertas de presupuesto" detalle="Cuando una categoría supera lo proyectado en el mes." checked={prefs.alertasPresupuesto} onChange={set('alertasPresupuesto')} />
-        <Interruptor label="Recurrentes por confirmar" detalle="Los movimientos que se repiten cada mes y aún no has registrado." checked={prefs.pendientesInicio} onChange={set('pendientesInicio')} />
-        <Interruptor label="Recordatorios" detalle="Días sin registrar, categorías cerca del límite y saldos de billeteras pendientes." checked={prefs.recordatorios} onChange={set('recordatorios')} />
+      <Grupo titulo="En la pantalla de Inicio">
+        <Interruptor label="Estado del presupuesto" detalle="Una pastilla bajo el título: «Mes saludable» o qué categorías superaron lo proyectado." checked={prefs.alertasPresupuesto} onChange={set('alertasPresupuesto')} />
+        <Interruptor label="Recurrentes por confirmar" detalle="Los movimientos que se repiten cada mes y aún no has registrado. En Movimientos se muestran siempre." checked={prefs.pendientesInicio} onChange={set('pendientesInicio')} />
       </Grupo>
-      <div className={cn('transition-opacity duration-200', !prefs.recordatorios && 'opacity-55')}>
-        <Grupo titulo="Umbrales de los recordatorios">
+      <Grupo titulo="Campana del encabezado">
+        <Interruptor label="Recordatorios" detalle="Activa la campana con un contador de avisos pendientes. Siempre avisa de los días sin registrar, las categorías cerca de su límite y los saldos de billeteras a fin de mes." checked={prefs.recordatorios} onChange={set('recordatorios')} />
+      </Grupo>
+      <div className={cn('grid gap-6 transition-opacity duration-200', !prefs.recordatorios && 'opacity-55')}>
+        <Grupo titulo="Qué más avisar">
+          <Interruptor label="Deuda sin cobrar" detalle="Una persona te debe hace más días de los que indiques abajo." checked={prefs.avisosDeuda} onChange={set('avisosDeuda')} />
+          <Interruptor label="Gasto atípico" detalle="Una categoría va 50% o más por encima de tu promedio de los últimos 3 meses." checked={prefs.avisosAtipico} onChange={set('avisosAtipico')} />
+          <Interruptor label="Saldo bajo en una billetera" detalle="Cuando una billetera baja del mínimo que definas abajo." checked={prefs.avisosSaldoBajo} onChange={set('avisosSaldoBajo')} />
+          <Interruptor label="Saldo total en riesgo" detalle="Si, al ritmo actual de gasto, terminarías el mes con saldo negativo." checked={prefs.avisosSaldoRiesgo} onChange={set('avisosSaldoRiesgo')} />
+          <Interruptor label="Cierre del mes anterior" detalle="Los primeros días del mes, si faltan los saldos de billeteras del mes que terminó." checked={prefs.avisosCierre} onChange={set('avisosCierre')} />
+          <Interruptor label="Presupuesto sin definir" detalle="Si falta el presupuesto de este mes o, a fin de mes, el del siguiente." checked={prefs.avisosSinPresupuesto} onChange={set('avisosSinPresupuesto')} />
+          <Interruptor label="Movimientos incompletos" detalle="Movimientos de este mes y el pasado sin categoría o sin billetera." checked={prefs.avisosIncompletos} onChange={set('avisosIncompletos')} />
+          <Interruptor label="Rachas" detalle="Una buena noticia cuando llevas varios meses seguidos dentro del presupuesto. No suma al contador." checked={prefs.avisosRacha} onChange={set('avisosRacha')} />
+        </Grupo>
+        <Grupo titulo="Cuándo avisar" nota="Una categoría que llega justo al 100% se considera cumplida; si se pasa, lo muestra el estado del presupuesto en Inicio.">
           <Umbral label="Avisar tras días sin registrar">
-            <Input type="number" inputMode="numeric" min={1} max={30} step={1} className={numero} disabled={!prefs.recordatorios} value={prefs.diasSinRegistrar} onChange={(e) => { const n = Math.round(Number(e.target.value)); if (n >= 1 && n <= 30) set('diasSinRegistrar')(n) }} />
+            <InputUmbral min={1} max={30} className={numero} disabled={!prefs.recordatorios} valor={prefs.diasSinRegistrar} onChange={set('diasSinRegistrar')} />
           </Umbral>
-          <Umbral label="Avisar al superar este % del presupuesto">
-            <Input type="number" inputMode="numeric" min={50} max={100} step={1} className={numero} disabled={!prefs.recordatorios} value={prefs.umbralPresupuesto} onChange={(e) => { const n = Math.round(Number(e.target.value)); if (n >= 50 && n <= 100) set('umbralPresupuesto')(n) }} />
+          <Umbral label="Avisar cuando una categoría llegue a este % del presupuesto">
+            <InputUmbral min={50} max={100} className={numero} disabled={!prefs.recordatorios} valor={prefs.umbralPresupuesto} onChange={set('umbralPresupuesto')} />
           </Umbral>
+          <Umbral label="Avisar una deuda sin cobrar tras días">
+            <InputUmbral min={1} max={365} className={numero} disabled={!prefs.recordatorios || !prefs.avisosDeuda} valor={prefs.diasDeuda} onChange={set('diasDeuda')} />
+          </Umbral>
+        </Grupo>
+        <Grupo titulo="Saldo mínimo por billetera" nota="Déjalo vacío para no recibir aviso de esa billetera.">
+          {state.billeteras.length ? (
+            state.billeteras.map((b) => (
+              <Umbral key={b.id} label={b.nombre}>
+                <MoneyInput className="h-9 w-36 bg-card" disabled={!prefs.recordatorios || !prefs.avisosSaldoBajo} value={prefs.saldoMinimo?.[b.id] ?? 0} onValueChange={(valor) => fijarMinimo(b.id, valor)} />
+              </Umbral>
+            ))
+          ) : (
+            <Fila>
+              <p className="text-sm text-muted-foreground">Crea tus billeteras para definir un mínimo en cada una.</p>
+            </Fila>
+          )}
         </Grupo>
       </div>
       <div className="z-10 flex justify-end md:sticky md:bottom-6">
@@ -375,7 +434,7 @@ function Datos() {
       <Grupo titulo="Borrar todos mis datos" peligro>
         <Fila className="flex-col items-stretch sm:flex-row sm:items-center">
           <p className="flex-1 text-sm text-muted-foreground">
-            Deja la cuenta vacía, como recién creada: se borran categorías, billeteras, movimientos, presupuestos, metas, recurrentes y notas. Tu usuario y tu contraseña se conservan. Descarga una copia antes si quieres guardarlos.
+            Deja la cuenta vacía, como recién creada: se borran categorías, billeteras, movimientos, presupuestos, deudas, metas, recurrentes y notas. Tu usuario y tu contraseña se conservan. Descarga una copia antes si quieres guardarlos.
           </p>
           <Button variant="destructive" className="shrink-0 self-start sm:self-center" onClick={() => setBorrando(true)}>
             <Trash2 /> Borrar todos mis datos

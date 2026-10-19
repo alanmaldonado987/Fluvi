@@ -29,7 +29,7 @@ export function BilleteraCard({ billetera, saldo, anterior, actividad, acciones,
       </p>
       {actividad.entradas || actividad.salidas ? (
         <p className="mt-1 text-xs text-muted-foreground">
-          Este mes entraron <Money value={actividad.entradas} className="font-semibold text-positive" /> y salieron <Money value={actividad.salidas} className="font-semibold text-foreground" />
+          Este mes entraron <Money value={actividad.entradas} className="font-semibold text-positive" /> y salieron <Money value={actividad.salidas} tone="negative" className="font-semibold" />
         </p>
       ) : null}
     </li>

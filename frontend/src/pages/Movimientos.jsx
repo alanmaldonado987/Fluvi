@@ -55,7 +55,7 @@ function Resumen({ titulo, movs, distribucion }) {
           <div className="flex justify-between gap-3">
             <dt className="text-muted-foreground">Egresos</dt>
             <dd>
-              <Money value={egresos} className="font-semibold" />
+              <Money value={egresos} tone="negative" className="font-semibold" />
             </dd>
           </div>
           <div className="flex justify-between gap-3 border-t pt-2">
@@ -76,7 +76,7 @@ function Resumen({ titulo, movs, distribucion }) {
               <li key={d.nombre}>
                 <div className="flex justify-between gap-3 text-sm">
                   <span className="truncate">{d.nombre}</span>
-                  <Money value={d.valor} className="font-semibold" />
+                  <Money value={d.valor} tone="negative" className="font-semibold" />
                 </div>
                 <Progreso valor={d.valor / mayor} tone="neutral" className="mt-1 h-1.5" />
               </li>
@@ -208,7 +208,7 @@ export default function Movimientos() {
                 <section key={g.fecha} className="pt-4">
                   <div className="flex items-center justify-between gap-3 px-1">
                     <h3 className="text-xs font-semibold text-muted-foreground">{etiquetaDia(g.fecha)}</h3>
-                    <Money value={totales(g.items).neto} signo className="text-xs font-semibold text-muted-foreground" />
+                    <Money value={totales(g.items).neto} signo tone={totales(g.items).neto < 0 ? 'negative' : 'neutral'} className={cn('text-xs font-semibold', totales(g.items).neto >= 0 && 'text-muted-foreground')} />
                   </div>
                   <ul className="mt-1 divide-y">
                     {g.items.map((m) => (
@@ -231,7 +231,7 @@ export default function Movimientos() {
               ))}
               <div className="flex items-center justify-between border-t px-1 pt-3">
                 <span className="text-sm font-semibold text-muted-foreground">Total ({lista.length} movimiento{lista.length !== 1 ? 's' : ''})</span>
-                <Money value={totales(lista).neto} signo className="text-sm font-bold" />
+                <Money value={totales(lista).neto} signo tone={totales(lista).neto < 0 ? 'negative' : 'neutral'} className="text-sm font-bold" />
               </div>
             </Panel>
           ) : (

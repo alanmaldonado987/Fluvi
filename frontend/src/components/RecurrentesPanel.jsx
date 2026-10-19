@@ -46,7 +46,7 @@ export function RecurrentesPanel() {
                     {r.activo ? '' : ', pausado'}
                   </span>
                 </span>
-                <Money value={r.valor} tone={r.tipo === 'Ingreso' ? 'positive' : 'neutral'} signo={r.tipo === 'Ingreso'} className="text-sm font-bold" />
+                <Money value={r.valor} tone={r.tipo === 'Ingreso' ? 'positive' : 'negative'} signo={r.tipo === 'Ingreso'} menos={r.tipo !== 'Ingreso'} className="text-sm font-bold" />
                 <DropdownMenu>
                   <DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="size-7" aria-label={`Opciones de ${nombre}`} />}>
                     <MoreHorizontal />

@@ -1,16 +1,38 @@
-import { ChevronRight, Pencil, Trash2 } from 'lucide-react'
+import { ArrowLeftRight, ChevronRight, Pencil, Trash2 } from 'lucide-react'
 import { CategoriaIcono } from '@/components/CategoriaIcono'
-import { Money } from '@/components/Money'
 import { Button } from '@/components/ui/button'
 import { fechaCorta } from '@/lib/format'
+import { useFormatoMoneda } from '@/lib/privado'
 import { cn } from '@/lib/utils'
 
 export const columnasMovimiento = 'md:grid-cols-[minmax(0,3fr)_minmax(0,1.4fr)_5rem_7.5rem_4rem]'
 
 const foco = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring'
 
+// El tipo se distingue también sin color: "+" para ingresos, "−" para egresos e ícono de flechas para transferencias.
+function Monto({ movimiento, className }) {
+  const formatear = useFormatoMoneda()
+  const { tipo, valor } = movimiento
+  if (tipo === 'Transferencia') {
+    return (
+      <span className={cn('inline-flex items-center justify-end gap-1 tabular-nums text-muted-foreground', className)}>
+        <ArrowLeftRight className="size-3.5" aria-hidden="true" />
+        <span className="sr-only">Transferencia </span>
+        {formatear(valor)}
+      </span>
+    )
+  }
+  const ingreso = tipo === 'Ingreso'
+  return (
+    <span className={cn('tabular-nums', ingreso ? 'text-positive' : 'text-negative', className)}>
+      <span className="sr-only">{ingreso ? 'Ingreso ' : 'Egreso '}</span>
+      {ingreso ? '+' : '−'}
+      {formatear(valor)}
+    </span>
+  )
+}
+
 export function MovimientoItem({ movimiento, categoria, icono = categoria, billetera, onEditar, onEliminar, tabla = false, mostrarFecha = true, className, style }) {
-  const ingreso = movimiento.tipo === 'Ingreso'
   const transferencia = movimiento.tipo === 'Transferencia'
   const nombre = movimiento.concepto || (transferencia ? 'Transferencia' : categoria)
   return (
@@ -36,7 +58,7 @@ export function MovimientoItem({ movimiento, categoria, icono = categoria, bille
           <span className="hidden text-sm text-muted-foreground md:block">{fechaCorta(movimiento.fecha)}</span>
         </>
       ) : null}
-      <Money value={movimiento.valor} tone={ingreso ? 'positive' : 'neutral'} signo={ingreso} className={cn('shrink-0 font-bold', transferencia && 'text-muted-foreground', tabla && 'md:text-right')} />
+      <Monto movimiento={movimiento} className={cn('shrink-0 font-bold', tabla && 'md:text-right')} />
       <span className={cn('flex shrink-0 items-center justify-end', (tabla || onEliminar) && 'acciones-hover')}>
         <ChevronRight className={cn('size-4 text-muted-foreground', (tabla || onEliminar) && 'md:hidden')} aria-hidden="true" />
         {tabla ? (

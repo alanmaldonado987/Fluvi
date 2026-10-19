@@ -29,7 +29,7 @@ export function PendientesRecurrentes({ className }) {
                   {etiqueta}, día {r.dia}
                 </span>
               </span>
-              <Money value={r.valor} tone={ingreso ? 'positive' : 'neutral'} signo={ingreso} className="font-bold" />
+              <Money value={r.valor} tone={ingreso ? 'positive' : 'negative'} signo={ingreso} menos={!ingreso} className="font-bold" />
               <span className="flex gap-1">
                 <Button size="sm" onClick={() => actions.aplicarRecurrente(r, state.mes)}>
                   Registrar

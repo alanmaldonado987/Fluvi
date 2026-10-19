@@ -1,10 +1,11 @@
 import { Anillo } from '@/components/Anillo'
-import { AlertTriangle, ArrowDownLeft, ArrowUpRight, ChartPie, FileSpreadsheet, PiggyBank, Plus, Sparkles, Wallet } from 'lucide-react'
+import { ArrowDownLeft, ArrowUpRight, ChartPie, FileSpreadsheet, PiggyBank, Plus, Wallet } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { BotonFlotante } from '@/components/BotonFlotante'
 import { BarrasCategorias } from '@/components/charts/BarrasCategorias'
 import { LineasAnual } from '@/components/charts/LineasAnual'
 import { EmptyState } from '@/components/EmptyState'
+import { EstadoMes } from '@/components/EstadoMes'
 import { FilaCategoria } from '@/components/FilaCategoria'
 import { Money } from '@/components/Money'
 import { MovimientoItem } from '@/components/MovimientoItem'
@@ -14,12 +15,10 @@ import { Panel } from '@/components/Panel'
 import { PeriodoPicker } from '@/components/PeriodPickers'
 import { Progreso } from '@/components/Progreso'
 import { NotasMes } from '@/components/NotasMes'
-import { Recordatorios } from '@/components/Recordatorios'
 import { StatCard } from '@/components/StatCard'
 import { buttonVariants } from '@/components/ui/button'
-import { avance, clave, describirMovimiento, distribucionEgresos, esMesUnico, nombreBilletera, excedidas, flujoAnio, flujoMes, flujoMulti, movsFiltrados, progresoMeta, saldoVivoBilletera, saldoVivoBilleteras, serieAnual, totales, totalesFilas } from '@/lib/calc'
+import { avance, clave, describirMovimiento, distribucionEgresos, esMesUnico, nombreBilletera, excedidas, flujoAnio, flujoMes, flujoMulti, movsFiltrados, periodoAnterior, progresoMeta, saldoVivoBilletera, saldoVivoBilleteras, serieAnual, totales, totalesFilas, variacion } from '@/lib/calc'
 import { anioDe, etiquetaPeriodo, MESES } from '@/lib/format'
-import { useFormatoMoneda } from '@/lib/privado'
 import { iconoBilletera } from '@/lib/iconos'
 import { entrada, escalonado } from '@/lib/motion'
 import { cn } from '@/lib/utils'
@@ -27,42 +26,6 @@ import { useAuth } from '@/store/auth'
 import { useFinance } from '@/store/context'
 
 const enlace = 'text-sm font-semibold text-forest underline-offset-4 hover:underline'
-
-function Alertas({ lista, hayMovimientos }) {
-  const formatCOP = useFormatoMoneda()
-  if (!hayMovimientos) return null
-  if (lista.length === 0) {
-    return (
-      <p className="flex items-center gap-3 rounded-2xl bg-positive-soft px-4 py-3 text-sm font-semibold text-positive">
-        <span className="grid size-8 shrink-0 place-items-center rounded-full bg-positive/15">
-          <Sparkles className="size-4" aria-hidden="true" />
-        </span>
-        Mes saludable: todos los egresos están dentro del presupuesto.
-      </p>
-    )
-  }
-  return (
-    <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-2xl bg-negative-soft px-4 py-3 text-sm text-negative">
-      <p className="flex items-center gap-2 font-bold">
-        <AlertTriangle className="size-5 shrink-0" aria-hidden="true" />
-        {lista.length === 1 ? 'Una categoría supera' : `${lista.length} categorías superan`} el presupuesto
-      </p>
-      <ul className="flex flex-wrap gap-x-5 gap-y-1">
-        {lista.map((c) => (
-          <li key={c.id} className="flex gap-2">
-            <span className="font-semibold">{c.nombre}</span>
-            <span className="tabular-nums">
-              {formatCOP(c.real)} de {formatCOP(c.proyectado)}
-            </span>
-          </li>
-        ))}
-      </ul>
-      <Link to="/flujo" className="font-semibold underline underline-offset-4 md:ml-auto">
-        Ver flujo de caja
-      </Link>
-    </div>
-  )
-}
 
 export default function Dashboard() {
   const { state } = useFinance()
@@ -76,6 +39,7 @@ export default function Dashboard() {
   const flujo = anual ? flujoAnio(state) : unico ? flujoMes(state, mes) : flujoMulti(state, mes)
   const filasEgresos = flujo.egresos
   const te = totalesFilas(filasEgresos)
+  const cumplidas = filasEgresos.filter((f) => f.proyectado > 0 && f.real === f.proyectado)
   const destacadas = filasEgresos
     .filter((f) => f.proyectado || f.real)
     .sort((a, b) => avance(b.proyectado, b.real) - avance(a.proyectado, a.real))
@@ -92,10 +56,21 @@ export default function Dashboard() {
   const tasaAhorro = ingresos ? Math.round((neto / ingresos) * 100) : null
   const cuentaIngresos = movs.filter((m) => m.tipo === 'Ingreso').length
   const etiqueta = etiquetaPeriodo(mes, anio)
+  const anterior = periodoAnterior(state)
+  const totAnterior = anterior ? totales(anterior.movs) : null
+  const vIngresos = totAnterior && variacion(ingresos, totAnterior.ingresos)
+  const vEgresos = totAnterior && variacion(egresos, totAnterior.egresos)
+  const vNeto = totAnterior && variacion(neto, totAnterior.neto)
+  // `bueno` indica si subir es favorable: sí para ingresos y ahorro, no para egresos.
+  const cambio = (pct, subirEsBueno) => (pct == null ? null : { pct, etiqueta: anterior.etiqueta, corta: anterior.corta, bueno: subirEsBueno ? pct >= 0 : pct <= 0 })
 
   return (
     <div className="grid gap-5">
-      <PageHeader title="Inicio" description={`${etiqueta} de un vistazo.`}>
+      <PageHeader
+        title="Inicio"
+        description={`${etiqueta} de un vistazo.`}
+        extra={!sinConfigurar && usuario.preferencias.alertasPresupuesto ? <EstadoMes excedidas={excedidas(filasEgresos)} cumplidas={cumplidas} hayMovimientos={movs.length > 0} /> : null}
+      >
         <PeriodoPicker />
         {state.categorias.length ? (
           <Link to="/movimientos" state={{ nuevo: true }} className={cn(buttonVariants(), 'hidden md:inline-flex')}>
@@ -119,76 +94,14 @@ export default function Dashboard() {
         <>
           <div className="grid grid-cols-2 gap-3 xl:grid-cols-5">
             <StatCard destacado grande icon={Wallet} label="Saldo en billeteras" value={saldoVivoBilleteras(state, mesVivo)} hint={`${billeteras.length} ${billeteras.length === 1 ? 'billetera' : 'billeteras'}`} className={cn('col-span-2', entrada)} style={escalonado(0)} />
-            <StatCard label="Ingresos" icon={ArrowDownLeft} value={ingresos} tone="positive" hint={`${cuentaIngresos} ${cuentaIngresos === 1 ? 'registrado' : 'registrados'}`} className={entrada} style={escalonado(1)} />
-            <StatCard label="Egresos" icon={ArrowUpRight} value={egresos} hint={te.proyectado ? `${Math.round(avance(te.proyectado, te.real) * 100)}% del presupuesto` : 'Sin presupuesto definido'} className={entrada} style={escalonado(2)} />
-            <StatCard label="Ahorro neto" icon={PiggyBank} value={neto} tone={neto < 0 ? 'negative' : 'positive'} hint={tasaAhorro == null ? 'Sin ingresos' : `${tasaAhorro}% de los ingresos`} className={cn('col-span-2 xl:col-span-1', entrada)} style={escalonado(3)} />
+            <StatCard label="Ingresos" icon={ArrowDownLeft} value={ingresos} tone="positive" hint={`${cuentaIngresos} ${cuentaIngresos === 1 ? 'registrado' : 'registrados'}`} variacion={cambio(vIngresos, true)} className={entrada} style={escalonado(1)} />
+            <StatCard label="Egresos" icon={ArrowUpRight} value={egresos} tone="negative" hint={te.proyectado ? `${Math.round(avance(te.proyectado, te.real) * 100)}% del presupuesto` : 'Sin presupuesto definido'} variacion={cambio(vEgresos, false)} className={entrada} style={escalonado(2)} />
+            <StatCard label="Ahorro neto" icon={PiggyBank} value={neto} tone={neto < 0 ? 'negative' : 'positive'} hint={tasaAhorro == null ? 'Sin ingresos' : `${tasaAhorro}% de los ingresos`} variacion={cambio(vNeto, true)} className={cn('col-span-2 xl:col-span-1', entrada)} style={escalonado(3)} />
           </div>
 
-          {usuario.preferencias.alertasPresupuesto ? <Alertas lista={excedidas(filasEgresos)} hayMovimientos={movs.length > 0} /> : null}
-          <Recordatorios />
           {usuario.preferencias.pendientesInicio ? <PendientesRecurrentes /> : null}
-          {state.metas.length ? (
-            <Panel
-              title="Metas de ahorro"
-              action={
-                <Link to="/presupuesto" state={{ tab: 'Metas' }} className={enlace}>
-                  Ver todas
-                </Link>
-              }
-            >
-              <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {state.metas.slice(0, 3).map((meta, i) => {
-                  const p = progresoMeta(state, meta)
-                  return (
-                    <li key={meta.id} className={cn('flex items-center gap-3', entrada)} style={escalonado(i)}>
-                      <Anillo valor={p.avance} tone={p.vencida ? 'negative' : 'positive'} />
-                      <div className="min-w-0 text-sm">
-                        <p className="truncate font-semibold">{meta.nombre}</p>
-                        <p className="truncate text-muted-foreground">
-                          <Money value={p.ahorrado} className="font-semibold text-foreground" /> de <Money value={meta.objetivo} />
-                        </p>
-                      </div>
-                    </li>
-                  )
-                })}
-              </ul>
-            </Panel>
-          ) : null}
 
           <div className="grid gap-5 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-            <Panel title={`Ingresos y egresos ${anio}`} className="flex flex-col">
-              <div className="min-h-64 flex-1">
-                <LineasAnual datos={serieAnual(state.movimientos, anio)} height="100%" />
-              </div>
-            </Panel>
-            <Panel
-              title={`Presupuesto de ${etiqueta}`}
-              action={
-                <Link to="/presupuesto" className={enlace}>
-                  Ver todo
-                </Link>
-              }
-            >
-              <p className="text-sm text-muted-foreground">
-                <Money value={te.real} className="font-semibold text-foreground" /> gastados de <Money value={te.proyectado} /> proyectados
-              </p>
-              <Progreso valor={avance(te.proyectado, te.real)} tone={te.real > te.proyectado ? 'negative' : 'positive'} className="mt-2" />
-              {destacadas.length ? (
-                <ul className="mt-2 divide-y">
-                  {destacadas.map((f, i) => (
-                    <FilaCategoria key={f.id} categoria={f} proyectado={f.proyectado} real={f.real} className={entrada} style={escalonado(i)} />
-                  ))}
-                </ul>
-              ) : (
-                <p className="mt-4 text-sm text-muted-foreground">Aún no hay presupuesto ni gastos este mes.</p>
-              )}
-            </Panel>
-          </div>
-
-          <div className="grid gap-5 lg:grid-cols-2 xl:grid-cols-3">
-            <Panel title={`Egresos de ${etiqueta}`}>
-              {distribucion.length ? <BarrasCategorias datos={distribucion} /> : <p className="text-sm text-muted-foreground">Aún no hay egresos este mes.</p>}
-            </Panel>
             <Panel
               title="Últimos movimientos"
               action={
@@ -217,6 +130,34 @@ export default function Dashboard() {
               )}
             </Panel>
             <Panel
+              title={`Presupuesto de ${etiqueta}`}
+              action={
+                <Link to="/presupuesto" className={enlace}>
+                  Ver todo
+                </Link>
+              }
+            >
+              <p className="text-sm text-muted-foreground">
+                <Money value={te.real} tone="negative" className="font-semibold" /> gastados de <Money value={te.proyectado} /> proyectados
+              </p>
+              <Progreso valor={avance(te.proyectado, te.real)} tone={te.real > te.proyectado ? 'negative' : 'positive'} className="mt-2" />
+              {destacadas.length ? (
+                <ul className="mt-2 divide-y">
+                  {destacadas.map((f, i) => (
+                    <FilaCategoria key={f.id} categoria={f} proyectado={f.proyectado} real={f.real} className={entrada} style={escalonado(i)} />
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-4 text-sm text-muted-foreground">Aún no hay presupuesto ni gastos este mes.</p>
+              )}
+            </Panel>
+          </div>
+
+          <div className={cn('grid gap-5 lg:grid-cols-2', state.metas.length > 0 && 'xl:grid-cols-3')}>
+            <Panel title={`Egresos de ${etiqueta}`}>
+              {distribucion.length ? <BarrasCategorias datos={distribucion} /> : <p className="text-sm text-muted-foreground">Aún no hay egresos este mes.</p>}
+            </Panel>
+            <Panel
               title="Billeteras"
               action={
                 <Link to="/billeteras" className={enlace}>
@@ -240,7 +181,41 @@ export default function Dashboard() {
                 <p className="text-sm text-muted-foreground">Agrega tus cuentas y el efectivo para ver el saldo aquí.</p>
               )}
             </Panel>
+            {state.metas.length ? (
+              <Panel
+                title="Metas de ahorro"
+                action={
+                  <Link to="/presupuesto" state={{ tab: 'Metas' }} className={enlace}>
+                    Ver todas
+                  </Link>
+                }
+              >
+                <ul className="grid gap-4">
+                  {state.metas.slice(0, 3).map((meta, i) => {
+                    const p = progresoMeta(state, meta)
+                    return (
+                      <li key={meta.id} className={cn('flex items-center gap-3', entrada)} style={escalonado(i)}>
+                        <Anillo valor={p.avance} tone={p.vencida ? 'negative' : 'positive'} />
+                        <div className="min-w-0 text-sm">
+                          <p className="truncate font-semibold">{meta.nombre}</p>
+                          <p className="truncate text-muted-foreground">
+                            <Money value={p.ahorrado} className="font-semibold text-foreground" /> de <Money value={meta.objetivo} />
+                          </p>
+                        </div>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </Panel>
+            ) : null}
           </div>
+
+          <Panel title={`Ingresos y egresos ${anio}`} className="flex flex-col">
+            <div className="min-h-64 flex-1">
+              <LineasAnual datos={serieAnual(state.movimientos, anio)} height="100%" mesActual={anio === new Date().getFullYear() ? new Date().getMonth() : null} />
+            </div>
+          </Panel>
+
           <NotasMes />
           <BotonFlotante label="Nuevo movimiento" onClick={() => navigate('/movimientos', { state: { nuevo: true } })} />
         </>

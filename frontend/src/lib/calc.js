@@ -1,4 +1,4 @@
-import { anioDe, fechaIso, fechaLarga, hoy, mesDe } from './format'
+import { anioDe, fechaIso, fechaLarga, formatCOP, MESES, MESES_CORTO, mesDe } from './format'
 
 export const clave = (anio, mes, id) => `${anio}-${mes}-${id}`
 export const idDeClave = (k) => k.split('-').slice(2).join('-')
@@ -13,6 +13,22 @@ export const movsFiltrados = (movimientos, anio, mes) => {
   if (Array.isArray(mes)) return movimientos.filter((m) => anioDe(m.fecha) === anio && mes.includes(mesDe(m.fecha)))
   return movimientosDe(movimientos, anio, mes)
 }
+
+// Período inmediato anterior para comparar: el mes anterior (diciembre del año pasado si es enero) o el año anterior.
+// Con varios meses seleccionados no hay comparación. Si el período es el mes en curso, se compara hasta el mismo día
+// para no mostrar como "ahorro" un mes que todavía no termina.
+export function periodoAnterior({ movimientos, anio, mes }, fecha = new Date()) {
+  if (mes === null) return { etiqueta: String(anio - 1), corta: String(anio - 1), movs: movsFiltrados(movimientos, anio - 1, null) }
+  if (!esMesUnico(mes)) return null
+  const [a, m] = mes > 0 ? [anio, mes - 1] : [anio - 1, 11]
+  const enCurso = anio === fecha.getFullYear() && mes === fecha.getMonth()
+  const movs = movimientosDe(movimientos, a, m).filter((x) => !enCurso || Number(x.fecha.slice(8, 10)) <= fecha.getDate())
+  const corta = MESES_CORTO[m].toLowerCase()
+  return { etiqueta: enCurso ? `${MESES[m].toLowerCase()} al día ${fecha.getDate()}` : MESES[m].toLowerCase(), corta: enCurso ? `${corta} · día ${fecha.getDate()}` : corta, movs }
+}
+
+// Cambio porcentual redondeado; null si no hay base de comparación.
+export const variacion = (actual, anterior) => (anterior ? Math.round(((actual - anterior) / Math.abs(anterior)) * 100) : null)
 
 export function totales(movs) {
   let ingresos = 0
@@ -251,27 +267,152 @@ export function progresoMeta(state, meta) {
 
 const diasEntre = (a, b) => Math.round((new Date(b.slice(0, 10)) - new Date(a.slice(0, 10))) / 86400000)
 
-export function recordatorios(state, preferencias) {
-  if (!preferencias.recordatorios) return []
+const mesRelativo = (anio, mes, delta) => {
+  const i = anio * 12 + mes + delta
+  return { anio: Math.floor(i / 12), mes: i % 12 }
+}
+
+const tienePresupuesto = (state, anio, mes) => principales(state.categorias).some((c) => (state.presupuestos[clave(anio, mes, c.id)] || 0) > 0)
+
+// Un mes cuenta como "dentro del presupuesto" si tenía presupuesto, tuvo movimientos y ningún egreso superó lo proyectado.
+function dentroDelPresupuesto(state, anio, mes) {
+  const { egresos } = flujoMes({ ...state, anio }, mes)
+  return egresos.some((f) => f.proyectado > 0) && movimientosDe(state.movimientos, anio, mes).length > 0 && excedidas(egresos).length === 0
+}
+
+const plural = (n, uno, varios) => `${n} ${n === 1 ? uno : varios}`
+
+function deudasSinCobrar(state, preferencias, formatear, hoyIso) {
   const lista = []
-  const ahora = new Date()
+  for (const d of state.deudas) {
+    if (d.pagada) continue
+    const abonado = state.movimientos.filter((m) => m.deudaId === d.id && m.tipo === 'Ingreso').reduce((t, m) => t + m.valor, 0)
+    const dias = diasEntre(d.fecha, hoyIso)
+    if (d.valor > abonado && dias >= preferencias.diasDeuda) {
+      lista.push({ id: `deuda-${d.id}`, texto: `${d.persona} te debe ${formatear(d.valor - abonado)} desde hace ${dias} días.`, ruta: '/deudas' })
+    }
+  }
+  return lista
+}
+
+// Compara el gasto del mes con el promedio de los 3 meses anteriores, solo en categorías de uso habitual (con gasto en al menos 2 de esos meses).
+function gastosAtipicos(state, formatear) {
+  const egresosDe = (anio, mes) => realPorCategoria(movimientosDe(state.movimientos, anio, mes).filter((m) => m.tipo === 'Egreso'), state.categorias)
+  const previos = [1, 2, 3].map((d) => {
+    const p = mesRelativo(state.anio, state.mes, -d)
+    return egresosDe(p.anio, p.mes)
+  })
+  const actual = egresosDe(state.anio, state.mes)
+  const lista = []
+  for (const c of principales(state.categorias).filter((x) => x.tipo === 'Egreso')) {
+    const valores = previos.map((r) => r.get(c.id) || 0)
+    if (valores.filter((v) => v > 0).length < 2) continue
+    const promedio = valores.reduce((t, v) => t + v, 0) / 3
+    const real = actual.get(c.id) || 0
+    if (real > promedio * 1.5 && real - promedio >= 50000) {
+      lista.push({ id: `atipico-${c.id}`, texto: `${c.nombre} lleva ${formatear(real)} este mes, ${Math.round((real / promedio - 1) * 100)}% más que tu promedio de ${formatear(promedio)}.`, ruta: '/movimientos' })
+    }
+  }
+  return lista
+}
+
+// Proyección simple: saldo de hoy + recurrentes de ingreso pendientes - recurrentes de egreso pendientes - gasto variable diario por los días que faltan.
+function saldoEnRiesgo(state, formatear, ahora) {
+  const dia = ahora.getDate()
+  if (!state.billeteras.length || dia < 5) return null
+  const restantes = diasEnMes(state.anio, state.mes) - dia
+  const variable = movimientosDe(state.movimientos, state.anio, state.mes)
+    .filter((m) => m.tipo === 'Egreso' && !m.recurrenteId && !m.deudaId)
+    .reduce((t, m) => t + m.valor, 0)
+  const pend = pendientes(state, state.mes)
+  const ingresos = pend.filter((r) => r.tipo === 'Ingreso').reduce((t, r) => t + r.valor, 0)
+  const egresos = pend.filter((r) => r.tipo !== 'Ingreso').reduce((t, r) => t + r.valor, 0)
+  const proyectado = saldoVivoBilleteras(state, state.mes) + ingresos - egresos - (variable / dia) * restantes
+  if (proyectado >= 0) return null
+  return { id: 'saldo-riesgo', texto: `A este ritmo terminarías ${MESES[state.mes].toLowerCase()} con ${formatear(Math.round(proyectado))} en tus billeteras.`, ruta: '/flujo' }
+}
+
+function movimientosIncompletos(state) {
+  const previo = mesRelativo(state.anio, state.mes, -1)
+  const recientes = [...movimientosDe(state.movimientos, state.anio, state.mes), ...movimientosDe(state.movimientos, previo.anio, previo.mes)]
+  const sinCategoria = recientes.filter((m) => m.tipo !== 'Transferencia' && !m.categoriaId && !m.deudaId).length
+  const sinBilletera = state.billeteras.length ? recientes.filter((m) => m.tipo !== 'Transferencia' && !m.billeteraId).length : 0
+  if (!sinCategoria && !sinBilletera) return null
+  const partes = []
+  if (sinCategoria) partes.push(`${plural(sinCategoria, 'movimiento', 'movimientos')} sin categoría`)
+  if (sinBilletera) partes.push(`${sinCategoria ? sinBilletera : plural(sinBilletera, 'movimiento', 'movimientos')} sin billetera`)
+  return { id: 'incompletos', texto: `Tienes ${partes.join(' y ')} en este y el mes pasado.`, ruta: '/movimientos' }
+}
+
+// Avisos de la campana. Siempre se calculan sobre el mes en curso (`ahora`), sin importar el período que se esté mirando.
+// Los avisos con `positivo` son buenas noticias: no cuentan en el contador de pendientes.
+export function recordatorios(estado, preferencias, formatear = formatCOP, ahora = new Date()) {
+  if (!preferencias.recordatorios) return []
+  const state = { ...estado, anio: ahora.getFullYear(), mes: ahora.getMonth() }
+  const activo = (nombre) => preferencias[nombre] !== false
+  const hoyIso = fechaIso(state.anio, state.mes, ahora.getDate())
+  const dia = ahora.getDate()
+  const restantes = diasEnMes(state.anio, state.mes) - dia
+  const plazo = restantes === 1 ? 'queda 1 día' : `quedan ${restantes} días`
+  const previo = mesRelativo(state.anio, state.mes, -1)
+  const siguiente = mesRelativo(state.anio, state.mes, 1)
+  const lista = []
+
+  if (activo('avisosDeuda')) lista.push(...deudasSinCobrar(state, preferencias, formatear, hoyIso))
+  if (activo('avisosSaldoRiesgo')) {
+    const riesgo = saldoEnRiesgo(state, formatear, ahora)
+    if (riesgo) lista.push(riesgo)
+  }
+  if (activo('avisosSaldoBajo')) {
+    for (const b of state.billeteras) {
+      const minimo = preferencias.saldoMinimo?.[b.id]
+      if (!minimo) continue
+      const saldo = saldoVivoBilletera(state, state.mes, b.id)
+      if (saldo < minimo) lista.push({ id: `saldo-bajo-${b.id}`, texto: `${b.nombre} tiene ${formatear(saldo)}, por debajo de tu mínimo de ${formatear(minimo)}.`, ruta: '/billeteras' })
+    }
+  }
+
+  for (const f of flujoMes(state, state.mes).egresos) {
+    // Un gasto que llegó exactamente a lo proyectado (arriendo, cuotas) está cumplido, no en riesgo; el redondeo hacia abajo evita mostrar "100%" sin haberlo alcanzado.
+    const pct = f.proyectado ? Math.floor((f.real / f.proyectado) * 100) : 0
+    if (pct >= preferencias.umbralPresupuesto && f.real < f.proyectado) {
+      lista.push({ id: `categoria-${f.id}`, texto: `${f.nombre} va al ${pct}% del presupuesto y ${plazo} del mes.`, ruta: '/presupuesto' })
+    }
+  }
+  if (activo('avisosAtipico')) lista.push(...gastosAtipicos(state, formatear))
+
   const ultima = state.movimientos.reduce((max, m) => (m.fecha > max ? m.fecha : max), '')
-  const dias = ultima ? diasEntre(ultima, hoy()) : 0
+  const dias = ultima ? diasEntre(ultima, hoyIso) : 0
   if (ultima && dias >= preferencias.diasSinRegistrar) {
     const texto = dias > 31 ? `No registras movimientos desde el ${fechaLarga(ultima).toLowerCase()} de ${ultima.slice(0, 4)}.` : `Llevas ${dias} ${dias === 1 ? 'día' : 'días'} sin registrar movimientos.`
     lista.push({ id: 'sin-registrar', texto, ruta: '/movimientos' })
   }
-  if (state.anio !== ahora.getFullYear() || !esMesUnico(state.mes) || state.mes !== ahora.getMonth()) return lista
-  const restantes = diasEnMes(state.anio, state.mes) - ahora.getDate()
-  const plazo = restantes === 1 ? 'queda 1 día' : `quedan ${restantes} días`
-  for (const f of flujoMes(state, state.mes).egresos) {
-    const pct = f.proyectado ? Math.round((f.real / f.proyectado) * 100) : 0
-    if (pct >= preferencias.umbralPresupuesto && f.real <= f.proyectado) {
-      lista.push({ id: `categoria-${f.id}`, texto: `${f.nombre} va al ${pct}% del presupuesto y ${plazo} del mes.`, ruta: '/presupuesto' })
-    }
+
+  if (activo('avisosIncompletos')) {
+    const incompletos = movimientosIncompletos(state)
+    if (incompletos) lista.push(incompletos)
   }
   if (restantes <= 5 && state.billeteras.length && !state.billeteras.some((b) => state.saldos[clave(state.anio, state.mes, b.id)] != null)) {
     lista.push({ id: 'billeteras', texto: 'El mes termina pronto y no has registrado los saldos de tus billeteras.', ruta: '/billeteras' })
+  }
+  if (activo('avisosCierre') && dia <= 10 && state.billeteras.length && movimientosDe(state.movimientos, previo.anio, previo.mes).length && !state.billeteras.some((b) => state.saldos[clave(previo.anio, previo.mes, b.id)] != null)) {
+    lista.push({ id: 'cierre-anterior', texto: `${MESES[previo.mes]} quedó sin saldos de billeteras registrados.`, ruta: '/billeteras' })
+  }
+  if (activo('avisosSinPresupuesto') && principales(state.categorias).length) {
+    if (!tienePresupuesto(state, state.anio, state.mes) && tienePresupuesto(state, previo.anio, previo.mes)) {
+      lista.push({ id: 'sin-presupuesto-mes', texto: `Aún no defines el presupuesto de ${MESES[state.mes].toLowerCase()}.`, ruta: '/presupuesto' })
+    } else if (restantes <= 7 && tienePresupuesto(state, state.anio, state.mes) && !tienePresupuesto(state, siguiente.anio, siguiente.mes)) {
+      lista.push({ id: 'sin-presupuesto-siguiente', texto: `Se acerca ${MESES[siguiente.mes].toLowerCase()} y aún no defines su presupuesto.`, ruta: '/presupuesto' })
+    }
+  }
+  if (activo('avisosRacha') && dia <= 7) {
+    let racha = 0
+    for (let k = 1; k <= 12; k++) {
+      const p = mesRelativo(state.anio, state.mes, -k)
+      if (!dentroDelPresupuesto(state, p.anio, p.mes)) break
+      racha++
+    }
+    if (racha >= 2) lista.push({ id: 'racha', texto: `¡${racha} meses seguidos dentro del presupuesto!`, ruta: '/flujo', positivo: true })
   }
   return lista
 }

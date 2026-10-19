@@ -40,23 +40,34 @@ const aDeuda = (r) => ({
   ...(r.fecha_pago ? { fechaPago: r.fecha_pago } : {}),
 })
 
-const consultar = (tabla, orden) => {
-  const q = supabase.from(tabla).select('*')
-  return (orden ? q.order(orden) : q).then(resultado)
+// Supabase devuelve como máximo 1000 filas por consulta sin avisar: se pide por tandas hasta completar el total.
+// Cada consulta se ordena también por una columna única para que ninguna fila se repita ni se salte entre tandas.
+const TANDA = 1000
+
+const consultar = async (tabla, ordenes) => {
+  const filas = []
+  for (;;) {
+    let q = supabase.from(tabla).select('*', { count: 'exact' })
+    for (const columna of ordenes) q = q.order(columna)
+    const { data, error, count } = await q.range(filas.length, filas.length + TANDA - 1)
+    if (error) throw error
+    filas.push(...data)
+    if (!data.length || filas.length >= count) return filas
+  }
 }
 
 export async function cargarTodo() {
   const [categorias, billeteras, movimientos, presupuestos, saldos, recurrentes, omitidos, metas, notas, deudas] = await Promise.all([
-    consultar('categorias', 'orden'),
-    consultar('billeteras', 'creado_en'),
-    consultar('movimientos', 'fecha'),
-    consultar('presupuestos'),
-    consultar('saldos_billetera'),
-    consultar('recurrentes', 'creado_en'),
-    consultar('recurrentes_omitidos'),
-    consultar('metas', 'creado_en'),
-    consultar('notas_mes'),
-    consultar('deudas', 'creado_en'),
+    consultar('categorias', ['orden', 'id']),
+    consultar('billeteras', ['creado_en', 'id']),
+    consultar('movimientos', ['fecha', 'id']),
+    consultar('presupuestos', ['anio', 'mes', 'categoria_id']),
+    consultar('saldos_billetera', ['anio', 'mes', 'billetera_id']),
+    consultar('recurrentes', ['creado_en', 'id']),
+    consultar('recurrentes_omitidos', ['anio', 'mes', 'recurrente_id']),
+    consultar('metas', ['creado_en', 'id']),
+    consultar('notas_mes', ['anio', 'mes']),
+    consultar('deudas', ['creado_en', 'id']),
   ])
   return {
     categorias: categorias.map(aCategoria),

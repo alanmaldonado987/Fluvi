@@ -1,4 +1,6 @@
+import { ArrowDown, ArrowUp, Minus } from 'lucide-react'
 import { Money } from '@/components/Money'
+import { usePrivado } from '@/lib/privado'
 import { cn } from '@/lib/utils'
 
 const chips = { positive: 'bg-positive-soft text-positive', negative: 'bg-negative-soft text-negative' }
@@ -13,7 +15,27 @@ function Ondas() {
   )
 }
 
-export function StatCard({ label, value, tone, signo = false, icon: Icon, hint, compacto = false, destacado = false, grande = false, className, style }) {
+// Cambio frente al período anterior. Se oculta en modo privado porque el porcentaje revela la proporción de las cifras.
+function Variacion({ pct, etiqueta, corta, bueno }) {
+  const privado = usePrivado()
+  if (privado) return null
+  const Icono = pct > 0 ? ArrowUp : pct < 0 ? ArrowDown : Minus
+  const tono = pct === 0 ? 'bg-muted text-muted-foreground' : bueno ? 'bg-positive-soft text-positive' : 'bg-negative-soft text-negative'
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span className={cn('inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[11px] leading-none font-semibold tabular-nums', tono)}>
+        <Icono className="size-3" strokeWidth={2.5} aria-hidden="true" />
+        {Math.abs(pct)}%
+        <span className="sr-only">
+          {pct > 0 ? ' más' : pct < 0 ? ' menos' : ' igual'} que {etiqueta}
+        </span>
+      </span>
+      <span aria-hidden="true" className="whitespace-nowrap">vs. {corta}</span>
+    </span>
+  )
+}
+
+export function StatCard({ label, value, tone, signo = false, icon: Icon, hint, variacion, compacto = false, destacado = false, grande = false, className, style }) {
   const tamano = grande ? 'text-2xl md:text-4xl' : compacto ? 'text-sm md:text-xl' : 'text-lg md:text-2xl'
   const secundario = destacado ? 'text-on-forest/75' : 'text-muted-foreground'
   return (
@@ -43,6 +65,7 @@ export function StatCard({ label, value, tone, signo = false, icon: Icon, hint, 
           <span className={cn('mt-1 block truncate font-bold tracking-tight', tamano)}>{value}</span>
         )}
         {hint ? <p className={cn('mt-1 text-xs', secundario)}>{hint}</p> : null}
+        {variacion ? <p className={cn('mt-1.5 text-xs', secundario)}><Variacion {...variacion} /></p> : null}
       </div>
     </div>
   )

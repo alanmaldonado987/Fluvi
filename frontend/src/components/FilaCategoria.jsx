@@ -44,7 +44,7 @@ export function FilaCategoria({ ref, categoria, proyectado, real, onProyectado, 
         <Progreso valor={avance(proyectado, real)} tone={tone} className="mt-2" />
         <div className="mt-1.5 flex justify-between gap-3 text-xs text-muted-foreground">
           <span>
-            <Money value={real} className="font-semibold text-foreground" /> {egreso ? 'gastado' : 'recibido'}
+            <Money value={real} tone={egreso ? 'negative' : 'neutral'} className={cn('font-semibold', !egreso && 'text-foreground')} /> {egreso ? 'gastado' : 'recibido'}
             {porcentajeIngreso != null && !privado && <span className="ml-1 text-muted-foreground/70">· {porcentajeIngreso}% del ingreso</span>}
           </span>
           <span className={cn(excede && 'font-semibold text-negative')}>{detalle}</span>

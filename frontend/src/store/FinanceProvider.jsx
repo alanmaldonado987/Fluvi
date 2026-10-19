@@ -25,7 +25,7 @@ export function FinanceProvider({ children }) {
       repo
         .cargarTodo()
         .then((datos) => vigente && dispatch({ type: 'cargar', datos }))
-        .catch((err) => {
+        .catch(() => {
           if (!vigente) return
           if (intento < 2) setTimeout(() => vigente && cargar(intento + 1), 1500)
           else toast.error('No se pudieron cargar tus datos. Revisa la conexión y recarga la página.')
@@ -45,15 +45,28 @@ export function FinanceProvider({ children }) {
         recargar()
       })
     }
+    // Los cambios de presupuesto, saldos y notas se agrupan unos instantes antes de guardarse. Si el guardado falla se vuelve
+    // a cargar lo que hay en el servidor, para que la pantalla no muestre un valor que nunca se guardó.
+    const enviar = (peticion) =>
+      peticion().catch(() => {
+        toast.error('No se pudo guardar el cambio. Se restauraron los datos.')
+        recargar().catch(() => {})
+      })
     const programar = (id, peticion) => {
-      clearTimeout(temporizadores.current.get(id))
-      temporizadores.current.set(
-        id,
-        setTimeout(() => {
-          temporizadores.current.delete(id)
-          peticion().catch(() => toast.error('No se pudo guardar el cambio.'))
-        }, ESPERA_ESCRITURA),
-      )
+      clearTimeout(temporizadores.current.get(id)?.temporizador)
+      const temporizador = setTimeout(() => {
+        temporizadores.current.delete(id)
+        enviar(peticion)
+      }, ESPERA_ESCRITURA)
+      temporizadores.current.set(id, { temporizador, peticion })
+    }
+    // Envía ya los cambios que aún esperan (al ocultar o cerrar la pestaña), para que no se pierdan.
+    const guardarPendientes = () => {
+      for (const { temporizador, peticion } of temporizadores.current.values()) {
+        clearTimeout(temporizador)
+        enviar(peticion)
+      }
+      temporizadores.current.clear()
     }
     const nuevoItem = (lista, datos) => {
       const item = { ...datos, id: crypto.randomUUID() }
@@ -70,6 +83,7 @@ export function FinanceProvider({ children }) {
     }
     return {
       recargar,
+      guardarPendientes,
       setPeriodo: (periodo) => dispatch({ type: 'periodo', periodo }),
       agregar: agregarItem,
       editar: (lista, id, datos) => ejecutar({ type: 'editar', lista, id, datos }, () => repo.actualizar(lista, id, datos)),
@@ -167,6 +181,18 @@ export function FinanceProvider({ children }) {
       borrarTodo: () => repo.borrarTodo().then(recargar),
     }
   }, [])
+
+  useEffect(() => {
+    const alOcultar = () => {
+      if (document.visibilityState === 'hidden') actions.guardarPendientes()
+    }
+    document.addEventListener('visibilitychange', alOcultar)
+    window.addEventListener('pagehide', actions.guardarPendientes)
+    return () => {
+      document.removeEventListener('visibilitychange', alOcultar)
+      window.removeEventListener('pagehide', actions.guardarPendientes)
+    }
+  }, [actions])
 
   if (usuario && !state.cargado) {
     return (

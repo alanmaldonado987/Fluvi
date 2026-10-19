@@ -15,13 +15,13 @@ import { entrada, escalonado } from '@/lib/motion'
 import { cn } from '@/lib/utils'
 import { useFinance } from '@/store/context'
 
-function Seccion({ titulo, filas, totales, columnas = false }) {
+function Seccion({ titulo, filas, totales, columnas = false, tone = 'neutral' }) {
   return (
     <Panel
       title={titulo}
       action={
         <p className="text-sm text-muted-foreground">
-          <Money value={totales.real} className="font-semibold text-foreground" /> de <Money value={totales.proyectado} />
+          <Money value={totales.real} tone={tone} className={cn('font-semibold', tone === 'neutral' && 'text-foreground')} /> de <Money value={totales.proyectado} />
         </p>
       }
     >
@@ -45,7 +45,7 @@ export default function FlujoCaja() {
   const pasos = [
     { clave: 'inicial', label: 'Saldo inicial', valor: saldoInicial, desde: 0, hasta: saldoInicial, color: 'var(--chart-5)' },
     { clave: 'ingresos', label: anual ? 'Ingresos del año' : 'Ingresos del mes', valor: ti.real, tone: 'positive', desde: saldoInicial, hasta: saldoInicial + ti.real, color: 'var(--leaf)' },
-    { clave: 'egresos', label: anual ? 'Egresos del año' : 'Egresos del mes', valor: te.real, desde: saldoInicial + ti.real, hasta: saldoFinal, color: 'var(--chart-3)' },
+    { clave: 'egresos', label: anual ? 'Egresos del año' : 'Egresos del mes', valor: te.real, tone: 'negative', desde: saldoInicial + ti.real, hasta: saldoFinal, color: 'var(--chart-3)' },
     { clave: 'final', label: 'Saldo final', valor: saldoFinal, final: true, desde: 0, hasta: saldoFinal, color: 'var(--forest)' },
   ]
   const descripcion = unico ? 'Cómo se mueve tu dinero durante el mes.' : etiquetaPeriodo(state.mes, state.anio)
@@ -71,7 +71,7 @@ export default function FlujoCaja() {
                     <span className="size-2 shrink-0 rounded-full" style={{ background: p.color }} aria-hidden="true" />
                     {p.label}
                   </p>
-                  <Money value={p.valor} tone={p.tone} className={cn('mt-1 block text-lg font-bold tracking-tight md:text-2xl', p.final && 'text-forest')} />
+                  <Money value={p.valor} tone={p.valor < 0 ? 'negative' : p.tone} className={cn('mt-1 block text-lg font-bold tracking-tight md:text-2xl', p.final && p.valor >= 0 && 'text-forest')} />
                 </li>
               ))}
             </ul>
@@ -81,7 +81,7 @@ export default function FlujoCaja() {
           </Panel>
           <div className="grid gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
             <Seccion titulo="Ingresos" filas={ingresos} totales={ti} />
-            <Seccion titulo="Egresos" filas={egresos} totales={te} columnas />
+            <Seccion titulo="Egresos" filas={egresos} totales={te} columnas tone="negative" />
           </div>
           <Panel title={`Saldo al cierre de cada mes, ${state.anio}`}>
             <BarrasMensuales datos={serieSaldos(state)} mesActivo={state.mes} nombre="Saldo final" />
