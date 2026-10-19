@@ -208,7 +208,7 @@ export default function Movimientos() {
                 <section key={g.fecha} className="pt-4">
                   <div className="flex items-center justify-between gap-3 px-1">
                     <h3 className="text-xs font-semibold text-muted-foreground">{etiquetaDia(g.fecha)}</h3>
-                    <Money value={totales(g.items).neto} signo tone={totales(g.items).neto < 0 ? 'negative' : 'neutral'} className={cn('text-xs font-semibold', totales(g.items).neto >= 0 && 'text-muted-foreground')} />
+                    <Money value={totales(g.items).neto} signo tone={totales(g.items).neto < 0 ? 'negative' : totales(g.items).neto > 0 ? 'positive' : 'neutral'} className={cn('text-xs font-semibold', totales(g.items).neto === 0 && 'text-muted-foreground')} />
                   </div>
                   <ul className="mt-1 divide-y">
                     {g.items.map((m) => (
@@ -231,7 +231,7 @@ export default function Movimientos() {
               ))}
               <div className="flex items-center justify-between border-t px-1 pt-3">
                 <span className="text-sm font-semibold text-muted-foreground">Total ({lista.length} movimiento{lista.length !== 1 ? 's' : ''})</span>
-                <Money value={totales(lista).neto} signo tone={totales(lista).neto < 0 ? 'negative' : 'neutral'} className="text-sm font-bold" />
+                <Money value={totales(lista).neto} signo tone={totales(lista).neto < 0 ? 'negative' : totales(lista).neto > 0 ? 'positive' : 'neutral'} className="text-sm font-bold" />
               </div>
             </Panel>
           ) : (

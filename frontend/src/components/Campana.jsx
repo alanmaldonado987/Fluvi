@@ -80,7 +80,7 @@ export function Campana({ variant = 'ghost', className }) {
   return (
     <Popover open={abierto} onOpenChange={setAbierto}>
       <PopoverTrigger
-        render={<Button variant={variant} size="icon" className={cn('relative text-muted-foreground', abierto && 'text-forest', className)} aria-label={sinVer ? `Recordatorios, ${sinVer} sin ver` : 'Recordatorios'} />}
+        render={<Button data-tour="campana" variant={variant} size="icon" className={cn('relative text-muted-foreground', abierto && 'text-forest', className)} aria-label={sinVer ? `Recordatorios, ${sinVer} sin ver` : 'Recordatorios'} />}
       >
         <Bell />
         {sinVer ? (

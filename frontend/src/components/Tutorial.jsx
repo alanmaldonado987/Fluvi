@@ -6,8 +6,9 @@ import { entrada } from '@/lib/motion'
 
 const pasos = [
   { ruta: '/', titulo: 'Bienvenida a Fluvi', texto: 'En un minuto te mostramos cómo funciona. Puedes saltar el recorrido y volver a verlo cuando quieras desde tu menú de usuario.' },
-  { ruta: '/', objetivo: 'inicio', titulo: 'Inicio', texto: 'Tu mes de un vistazo: saldo en billeteras, ingresos, egresos, ahorro, alertas de presupuesto y recordatorios.' },
+  { ruta: '/', objetivo: 'inicio', titulo: 'Inicio', texto: 'Tu mes de un vistazo: saldo en billeteras, ingresos, egresos y ahorro, cada uno comparado con el mes anterior. Bajo el título ves si tu presupuesto va en orden y, al tocarlo, qué categorías se pasaron.' },
   { ruta: '/', objetivo: 'periodo', titulo: 'Mes y año', texto: 'Cambia el periodo aquí. Toda la app muestra el mes que elijas, así puedes revisar también años anteriores.' },
+  { ruta: '/', objetivo: 'campana', titulo: 'Recordatorios', texto: 'La campana reúne tus avisos: días sin registrar, deudas por cobrar, categorías cerca de su límite y más. El número es lo que aún no has visto: toca un aviso para abrirlo, o la X para descartarlo.' },
   { ruta: '/presupuesto', objetivo: 'presupuesto', titulo: 'Presupuesto', texto: 'Crea tus categorías de egresos e ingresos y define cuánto planeas cada mes. También puedes usar subcategorías y metas de ahorro.' },
   { ruta: '/billeteras', objetivo: 'billeteras', titulo: 'Billeteras', texto: 'Registra tus cuentas, como Nequi, el banco o el efectivo, y anota el saldo con el que cierras cada mes.' },
   { ruta: '/movimientos', objetivo: 'movimientos', titulo: 'Movimientos', texto: 'Aquí anotas cada gasto, ingreso o transferencia entre billeteras. Marca "Repetir cada mes" en los fijos, como el arriendo.' },
@@ -15,7 +16,7 @@ const pasos = [
   { ruta: '/deudas', objetivo: 'deudas', alterno: 'mas', titulo: 'Deudas', texto: 'Registra los préstamos que haces y cobra cuando te paguen. Si la deuda es grande, puedes registrar abonos parciales hasta completar el pago.' },
   { ruta: '/flujo', objetivo: 'flujo', alterno: 'mas', titulo: 'Flujo', texto: 'Compara lo que planeaste con lo que realmente pasó, categoría por categoría y mes a mes.' },
   { objetivo: 'privado', titulo: 'Modo privado', texto: 'Oculta todas las cifras con un toque, útil cuando revisas tus finanzas en público.' },
-  { objetivo: 'usuario', titulo: 'Tu cuenta', texto: 'Desde tu menú entras a Configuración: perfil, notificaciones, tema oscuro, copia de seguridad y cierre de sesión.' },
+  { objetivo: 'usuario', titulo: 'Tu cuenta', texto: 'Desde tu menú entras a Configuración: perfil, qué avisos recibir en la campana, tema oscuro, copia de seguridad y cierre de sesión.' },
   { ruta: '/', titulo: 'Eso es todo', texto: 'Empieza creando tus categorías en Presupuesto, o importa tu Excel y tendrás todo listo en un minuto.', final: true },
 ]
 
