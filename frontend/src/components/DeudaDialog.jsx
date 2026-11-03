@@ -128,8 +128,36 @@ function FormCobrar({ deuda, abonado = 0, onGuardar }) {
   )
 }
 
-export function DeudaDialog({ open, onOpenChange, modo = 'prestar', deuda, abonado, onPrestar, onCobrar, onEditar }) {
-  const titulo = { prestar: 'Nuevo préstamo', cobrar: 'Cobrar deuda', editar: 'Editar deuda' }
+function FormEditarCobro({ deuda, onGuardar }) {
+  const [fecha, setFecha] = useState(deuda.fechaPago ?? hoy())
+  const valido = fecha && fecha >= deuda.fecha
+
+  const enviar = (e) => {
+    e.preventDefault()
+    onGuardar(deuda.id, fecha)
+  }
+
+  return (
+    <form className="grid gap-4" onSubmit={enviar}>
+      <div className="text-sm text-muted-foreground">
+        <p>
+          <strong>{deuda.persona}</strong> pagó <strong>${deuda.valor.toLocaleString('es-CO')}</strong>.
+        </p>
+      </div>
+      <Campo label="Fecha de cobro">
+        <Input type="date" required min={deuda.fecha} value={fecha} onChange={(e) => setFecha(e.target.value)} />
+      </Campo>
+      <p className="text-xs text-muted-foreground">El ingreso del cobro en Movimientos se mueve a esta fecha, y cuenta en el mes que corresponda.</p>
+      <DialogFooter>
+        <DialogClose render={<Button variant="outline" />}>Cancelar</DialogClose>
+        <Button type="submit" disabled={!valido}>Guardar cambios</Button>
+      </DialogFooter>
+    </form>
+  )
+}
+
+export function DeudaDialog({ open, onOpenChange, modo = 'prestar', deuda, abonado, onPrestar, onCobrar, onEditar, onEditarCobro }) {
+  const titulo = { prestar: 'Nuevo préstamo', cobrar: 'Cobrar deuda', editar: 'Editar deuda', editarCobro: 'Editar cobro' }
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md max-sm:top-auto max-sm:bottom-0 max-sm:max-w-full max-sm:translate-y-0 max-sm:rounded-t-3xl max-sm:rounded-b-none max-sm:pt-7 max-sm:before:absolute max-sm:before:top-2.5 max-sm:before:left-1/2 max-sm:before:h-1 max-sm:before:w-10 max-sm:before:-translate-x-1/2 max-sm:before:rounded-full max-sm:before:bg-border max-sm:[&_[data-slot=dialog-footer]]:rounded-b-none max-sm:[&_[data-slot=dialog-footer]]:pb-[calc(env(safe-area-inset-bottom)+1rem)] max-sm:duration-300 max-sm:ease-drawer max-sm:data-open:zoom-in-100 max-sm:data-open:slide-in-from-bottom-8 max-sm:data-closed:zoom-out-100 max-sm:data-closed:slide-out-to-bottom-8">
@@ -138,6 +166,8 @@ export function DeudaDialog({ open, onOpenChange, modo = 'prestar', deuda, abona
         </DialogHeader>
         {modo === 'cobrar' && deuda ? (
           <FormCobrar deuda={deuda} abonado={abonado} onGuardar={(...args) => { onCobrar(...args); onOpenChange(false) }} />
+        ) : modo === 'editarCobro' && deuda ? (
+          <FormEditarCobro deuda={deuda} onGuardar={(...args) => { onEditarCobro(...args); onOpenChange(false) }} />
         ) : modo === 'editar' && deuda ? (
           <FormEditar deuda={deuda} abonado={abonado} onGuardar={(...args) => { onEditar(...args); onOpenChange(false) }} />
         ) : (

@@ -1,4 +1,4 @@
-import { Bell, Check, ChevronRight, CircleCheck, Clock, Database, Download, Eye, EyeOff, LoaderCircle, LogOut, Monitor, MonitorSmartphone, Moon, Palette, Shield, Sun, Trash2, TriangleAlert, User } from 'lucide-react'
+import { ArchiveRestore, Bell, Check, ChevronRight, CircleCheck, Clock, Database, Download, Eye, EyeOff, LoaderCircle, LogOut, Monitor, MonitorSmartphone, Moon, Palette, Shield, Sun, Trash2, TriangleAlert, User } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Navigate, NavLink, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -7,12 +7,14 @@ import { Campo } from '@/components/Campo'
 import { CerrarSesionDialog } from '@/components/CerrarSesionDialog'
 import { FormularioInline } from '@/components/FormularioInline'
 import { PageHeader } from '@/components/PageHeader'
+import { RestaurarCopiaDialog } from '@/components/RestaurarCopiaDialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { MoneyInput } from '@/components/MoneyInput'
 import { Switch } from '@/components/ui/switch'
+import { crearCopia, descargarCopia, leerCopia, MAX_BYTES, ultimaCopia } from '@/lib/copia'
 import { exportarExcel } from '@/lib/excel'
-import { fechaLarga } from '@/lib/format'
+import { fechaHora, fechaLarga } from '@/lib/format'
 import { entrada } from '@/lib/motion'
 import { guardarTema, useTema } from '@/lib/tema'
 import { cn } from '@/lib/utils'
@@ -406,8 +408,14 @@ function Apariencia() {
 
 function Datos() {
   const { state } = useFinance()
+  const { usuario } = useAuth()
   const [borrando, setBorrando] = useState(false)
   const [exportando, setExportando] = useState(false)
+  const [respaldando, setRespaldando] = useState(false)
+  const [ultima, setUltima] = useState(ultimaCopia)
+  const [restaurar, setRestaurar] = useState(null)
+  const entradaCopia = useRef(null)
+
   const descargar = async () => {
     setExportando(true)
     try {
@@ -418,14 +426,58 @@ function Datos() {
       setExportando(false)
     }
   }
+  const respaldar = async () => {
+    setRespaldando(true)
+    try {
+      const copia = await crearCopia(usuario)
+      descargarCopia(copia)
+      setUltima(copia.exportadoEn)
+      toast.success('Copia completa descargada.')
+    } catch {
+      toast.error('No se pudo generar la copia. Revisa tu conexión e inténtalo de nuevo.')
+    } finally {
+      setRespaldando(false)
+    }
+  }
+  const elegirCopia = async (e) => {
+    const archivo = e.target.files?.[0]
+    e.target.value = ''
+    if (!archivo) return
+    if (archivo.size > MAX_BYTES) {
+      toast.error('El archivo es demasiado grande para ser una copia de Fluvi.')
+      return
+    }
+    try {
+      setRestaurar(leerCopia(await archivo.text()))
+    } catch (err) {
+      toast.error(err.message)
+    }
+  }
   const total = state.movimientos.length
   return (
     <>
-      <Grupo titulo="Copia de seguridad">
+      <Grupo titulo="Copia de seguridad completa" nota={ultima ? `Última copia descargada: ${fechaHora(ultima).replace(/\.?$/, '.')}` : 'Aún no has descargado una copia completa.'}>
         <Fila className="flex-col items-stretch sm:flex-row sm:items-center">
           <p className="flex-1 text-sm text-muted-foreground">
-            Descarga tus datos del {state.anio} en un Excel con la misma estructura de tu archivo de finanzas (Ingresos, Egresos, Caja, Registros): {state.categorias.length} categorías, {state.billeteras.length} billeteras y {total} {total === 1 ? 'movimiento' : 'movimientos'}.
+            Guarda en un solo archivo todo lo que tienes en Fluvi, de todos los años: categorías, billeteras, movimientos, presupuestos, saldos, deudas, metas, recurrentes, notas, historial de cambios y tus preferencias. Hoy son {state.categorias.length} categorías, {state.billeteras.length} billeteras y {total} {total === 1 ? 'movimiento' : 'movimientos'}.
           </p>
+          <Button className="shrink-0 self-start sm:self-center" onClick={respaldar} disabled={respaldando}>
+            {respaldando ? <LoaderCircle className="animate-spin" aria-hidden="true" /> : <Download />} Descargar copia completa
+          </Button>
+        </Fila>
+      </Grupo>
+      <Grupo titulo="Restaurar una copia" nota="Se agrega lo que falte y se actualiza lo que ya exista; no se borra nada de lo que tienes ahora.">
+        <Fila className="flex-col items-stretch sm:flex-row sm:items-center">
+          <p className="flex-1 text-sm text-muted-foreground">Recupera tu información desde un archivo de copia completa (.json) descargado antes desde Fluvi.</p>
+          <Button variant="outline" className="shrink-0 self-start sm:self-center" onClick={() => entradaCopia.current?.click()}>
+            <ArchiveRestore /> Elegir archivo
+          </Button>
+          <input ref={entradaCopia} type="file" accept=".json,application/json" className="sr-only" onChange={elegirCopia} aria-label="Archivo de copia de seguridad" />
+        </Fila>
+      </Grupo>
+      <Grupo titulo="Exportar a Excel" nota="El Excel es para consultar o compartir un año: no incluye deudas, metas, recurrentes ni notas. Para respaldar todo, usa la copia completa.">
+        <Fila className="flex-col items-stretch sm:flex-row sm:items-center">
+          <p className="flex-1 text-sm text-muted-foreground">Descarga tus datos del {state.anio} en un Excel con la misma estructura de tu archivo de finanzas (Ingresos, Egresos, Caja, Registros).</p>
           <Button variant="outline" className="shrink-0 self-start sm:self-center" onClick={descargar} disabled={exportando}>
             {exportando ? <LoaderCircle className="animate-spin" aria-hidden="true" /> : <Download />} Descargar Excel {state.anio}
           </Button>
@@ -434,7 +486,7 @@ function Datos() {
       <Grupo titulo="Borrar todos mis datos" peligro>
         <Fila className="flex-col items-stretch sm:flex-row sm:items-center">
           <p className="flex-1 text-sm text-muted-foreground">
-            Deja la cuenta vacía, como recién creada: se borran categorías, billeteras, movimientos, presupuestos, deudas, metas, recurrentes y notas. Tu usuario y tu contraseña se conservan. Descarga una copia antes si quieres guardarlos.
+            Deja la cuenta vacía, como recién creada: se borran categorías, billeteras, movimientos, presupuestos, deudas, metas, recurrentes y notas. Tu usuario y tu contraseña se conservan. Descarga una copia completa antes si quieres guardarlos.
           </p>
           <Button variant="destructive" className="shrink-0 self-start sm:self-center" onClick={() => setBorrando(true)}>
             <Trash2 /> Borrar todos mis datos
@@ -442,6 +494,7 @@ function Datos() {
         </Fila>
       </Grupo>
       <BorrarDatosDialog open={borrando} onOpenChange={setBorrando} />
+      <RestaurarCopiaDialog copia={restaurar?.copia ?? null} resumen={restaurar?.resumen ?? []} onClose={() => setRestaurar(null)} />
     </>
   )
 }

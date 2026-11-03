@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useReducer, useRef } from 'react'
 import { toast } from 'sonner'
 import { movimientoDesdeRecurrente } from '@/lib/calc'
+import { comenzarGuardado, terminarGuardado } from '@/lib/guardado'
 import * as repo from '@/lib/repo'
 import { useAuth } from './auth'
 import { FinanceContext } from './context'
@@ -38,21 +39,23 @@ export function FinanceProvider({ children }) {
 
   const actions = useMemo(() => {
     const recargar = () => repo.cargarTodo().then((datos) => dispatch({ type: 'cargar', datos }))
+    // Cada guardado avisa al indicador (Guardando, Guardado o error). Si falla, se vuelve a cargar lo que hay en el servidor
+    // para que la pantalla no muestre un valor que nunca se guardó.
+    const alFallar = () => {
+      terminarGuardado(false)
+      toast.error('No se pudo guardar el cambio. Se restauraron los datos.')
+      recargar().catch(() => {})
+    }
     const ejecutar = (acciones, peticion) => {
       ;[].concat(acciones).forEach(dispatch)
-      peticion().catch(() => {
-        toast.error('No se pudo guardar el cambio. Se restauraron los datos.')
-        recargar()
-      })
+      comenzarGuardado()
+      peticion().then(() => terminarGuardado(true), alFallar)
     }
-    // Los cambios de presupuesto, saldos y notas se agrupan unos instantes antes de guardarse. Si el guardado falla se vuelve
-    // a cargar lo que hay en el servidor, para que la pantalla no muestre un valor que nunca se guardó.
-    const enviar = (peticion) =>
-      peticion().catch(() => {
-        toast.error('No se pudo guardar el cambio. Se restauraron los datos.')
-        recargar().catch(() => {})
-      })
+    // Los cambios de presupuesto, saldos y notas se agrupan unos instantes antes de guardarse; el indicador cuenta desde que se
+    // programan. `enviar` los manda y cierra ese guardado.
+    const enviar = (peticion) => peticion().then(() => terminarGuardado(true), alFallar)
     const programar = (id, peticion) => {
+      if (!temporizadores.current.has(id)) comenzarGuardado()
       clearTimeout(temporizadores.current.get(id)?.temporizador)
       const temporizador = setTimeout(() => {
         temporizadores.current.delete(id)
@@ -134,6 +137,22 @@ export function FinanceProvider({ children }) {
           return movOriginal
             ? p.then(() => repo.actualizar('movimientos', movOriginal.id, { valor: datos.valor, billeteraId: datos.billeteraId, fecha: datos.fecha, concepto: datos.concepto || `Préstamo a ${datos.persona}` }))
             : p
+        })
+      },
+      // Cambia la fecha de cobro de una deuda ya pagada y mueve con ella el ingreso del cobro, para que cuente en el mes correcto.
+      // Con abonos, el cobro es el que completó el pago (el que tiene la fecha de pago); si no se encuentra, el más reciente.
+      editarCobro: (deudaId, fecha) => {
+        const { deudas, movimientos } = estadoRef.current
+        const deuda = deudas.find((d) => d.id === deudaId)
+        if (!deuda) return
+        const masReciente = (a, b) => b.fecha.localeCompare(a.fecha) || b.consecutivo - a.consecutivo
+        const ingresos = movimientos.filter((m) => m.deudaId === deudaId && m.tipo === 'Ingreso')
+        const cobro = ingresos.filter((m) => m.fecha === deuda.fechaPago).sort(masReciente)[0] ?? [...ingresos].sort(masReciente)[0]
+        const acciones = [{ type: 'editar', lista: 'deudas', id: deudaId, datos: { fechaPago: fecha } }]
+        if (cobro) acciones.push({ type: 'editar', lista: 'movimientos', id: cobro.id, datos: { fecha } })
+        ejecutar(acciones, () => {
+          const p = repo.actualizar('deudas', deudaId, { fechaPago: fecha })
+          return cobro ? p.then(() => repo.actualizar('movimientos', cobro.id, { fecha })) : p
         })
       },
       prestar: (datos) => {

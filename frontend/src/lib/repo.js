@@ -106,3 +106,26 @@ export const reordenarCategorias = (items) => Promise.all(items.map(({ id, orden
 export const borrarTodo = () => supabase.rpc('borrar_mis_datos').then(resultado)
 
 export const importarAnio = (anio, datos) => supabase.rpc('importar_anio', { p_anio: anio, p_datos: datos }).then(resultado)
+
+// Copia de seguridad: las filas tal como están en la base de datos, de todos los años y todas las tablas.
+export const TABLAS_COPIA = [
+  ['categorias', ['orden', 'id']],
+  ['billeteras', ['creado_en', 'id']],
+  ['recurrentes', ['creado_en', 'id']],
+  ['deudas', ['creado_en', 'id']],
+  ['movimientos', ['fecha', 'id']],
+  ['presupuestos', ['anio', 'mes', 'categoria_id']],
+  ['saldos_billetera', ['anio', 'mes', 'billetera_id']],
+  ['recurrentes_omitidos', ['anio', 'mes', 'recurrente_id']],
+  ['metas', ['creado_en', 'id']],
+  ['notas_mes', ['anio', 'mes']],
+  ['movimientos_historial', ['id']],
+]
+
+export async function exportarCopia() {
+  const filas = await Promise.all(TABLAS_COPIA.map(([tabla, ordenes]) => consultar(tabla, ordenes)))
+  return Object.fromEntries(TABLAS_COPIA.map(([tabla], i) => [tabla, filas[i]]))
+}
+
+// Agrega o actualiza filas por su llave primaria; nunca borra las que ya existen.
+export const subirFilas = (tabla, filas) => supabase.from(tabla).upsert(filas).then(resultado)

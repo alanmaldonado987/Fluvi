@@ -138,7 +138,12 @@ export default function Deudas() {
                     <p className="truncate text-sm font-medium">{d.persona}</p>
                     <p className="text-xs text-muted-foreground">{fechaCorta(d.fechaPago)}</p>
                   </div>
-                  <Money value={d.valor} tone="positive" className="shrink-0 text-sm font-semibold" />
+                  <span className="flex shrink-0 items-center gap-1">
+                    <Money value={d.valor} tone="positive" className="text-sm font-semibold" />
+                    <Button variant="ghost" size="icon" className="size-8" aria-label={`Editar cobro de ${d.persona}`} onClick={() => setDialog({ modo: 'editarCobro', deuda: d })}>
+                      <Pencil />
+                    </Button>
+                  </span>
                 </li>
               ))}
             </ul>
@@ -157,6 +162,7 @@ export default function Deudas() {
         onPrestar={(datos) => actions.prestar(datos)}
         onCobrar={(id, billetera, fecha, monto) => actions.cobrar(id, billetera, fecha, monto)}
         onEditar={(id, datos) => actions.editarDeuda(id, datos)}
+        onEditarCobro={(id, fecha) => actions.editarCobro(id, fecha)}
       />
 
       <ConfirmDialog

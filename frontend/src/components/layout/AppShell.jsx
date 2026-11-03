@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { BotonPrivado } from '@/components/BotonPrivado'
 import { Campana } from '@/components/Campana'
+import { IndicadorGuardado } from '@/components/IndicadorGuardado'
 import { Logo } from '@/components/Logo'
 import { Tutorial } from '@/components/Tutorial'
 import { Button } from '@/components/ui/button'
@@ -184,6 +185,7 @@ export function AppShell() {
           </li>
         </ul>
       </nav>
+      <IndicadorGuardado />
       {tutorial ? <Tutorial onCerrar={cerrarTutorial} /> : null}
     </div>
   )
