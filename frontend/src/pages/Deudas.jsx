@@ -55,6 +55,13 @@ export default function Deudas() {
     return m === mes
   })
 
+  // Al eliminar una deuda también se eliminan sus movimientos (el egreso del préstamo y los cobros o abonos): así lo hace la
+  // base de datos y así se ve en pantalla, por eso el aviso dice exactamente cuántos son.
+  const movimientosDeLaDeuda = porEliminar ? state.movimientos.filter((m) => m.deudaId === porEliminar.id).length : 0
+  const movimientosBorrados =
+    movimientosDeLaDeuda === 0 ? 'Se elimina la deuda; no tiene movimientos asociados.' : movimientosDeLaDeuda === 1 ? 'Se elimina la deuda y también su único movimiento.' : `Se elimina la deuda y también sus ${movimientosDeLaDeuda} movimientos (el préstamo y los cobros o abonos).`
+  const descripcionBorrado = `${movimientosBorrados} Los saldos y los totales se recalculan. Esta acción no se puede deshacer.`
+
   return (
     <div className="grid gap-5">
       <PageHeader title="Deudas" description="Registra los préstamos que haces y cobra cuando te paguen.">
@@ -140,8 +147,11 @@ export default function Deudas() {
                   </div>
                   <span className="flex shrink-0 items-center gap-1">
                     <Money value={d.valor} tone="positive" className="text-sm font-semibold" />
-                    <Button variant="ghost" size="icon" className="size-8" aria-label={`Editar cobro de ${d.persona}`} onClick={() => setDialog({ modo: 'editarCobro', deuda: d })}>
+                    <Button variant="ghost" size="icon" className="size-8" aria-label={`Editar fechas de la deuda cobrada de ${d.persona}`} onClick={() => setDialog({ modo: 'editarFechas', deuda: d })}>
                       <Pencil />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="size-8" aria-label={`Eliminar deuda cobrada de ${d.persona}`} onClick={() => setPorEliminar(d)}>
+                      <Trash2 />
                     </Button>
                   </span>
                 </li>
@@ -162,14 +172,14 @@ export default function Deudas() {
         onPrestar={(datos) => actions.prestar(datos)}
         onCobrar={(id, billetera, fecha, monto) => actions.cobrar(id, billetera, fecha, monto)}
         onEditar={(id, datos) => actions.editarDeuda(id, datos)}
-        onEditarCobro={(id, fecha) => actions.editarCobro(id, fecha)}
+        onEditarFechas={(id, fechas) => actions.editarFechasDeuda(id, fechas)}
       />
 
       <ConfirmDialog
         open={porEliminar !== null}
         onOpenChange={(abierto) => { if (!abierto) setPorEliminar(null) }}
         title={`¿Eliminar deuda de "${porEliminar?.persona}"?`}
-        description="Se elimina el registro de la deuda. Los movimientos asociados (egreso del préstamo) se conservan."
+        description={descripcionBorrado}
         onConfirm={() => { actions.eliminar('deudas', porEliminar.id); setPorEliminar(null) }}
       />
     </div>

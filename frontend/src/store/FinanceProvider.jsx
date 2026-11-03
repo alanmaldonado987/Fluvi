@@ -139,21 +139,33 @@ export function FinanceProvider({ children }) {
             : p
         })
       },
-      // Cambia la fecha de cobro de una deuda ya pagada y mueve con ella el ingreso del cobro, para que cuente en el mes correcto.
-      // Con abonos, el cobro es el que completó el pago (el que tiene la fecha de pago); si no se encuentra, el más reciente.
-      editarCobro: (deudaId, fecha) => {
+      // Cambia las fechas de una deuda ya pagada y mueve con ellas sus movimientos, para que cuenten en el mes correcto:
+      //  - fecha: la del préstamo; mueve el egreso del préstamo.
+      //  - fechaPago: la del cobro; mueve el ingreso del cobro. Con abonos, es el que completó el pago (el que tiene la
+      //    fecha de pago); si no se encuentra, el más reciente.
+      editarFechasDeuda: (deudaId, { fecha, fechaPago }) => {
         const { deudas, movimientos } = estadoRef.current
         const deuda = deudas.find((d) => d.id === deudaId)
         if (!deuda) return
         const masReciente = (a, b) => b.fecha.localeCompare(a.fecha) || b.consecutivo - a.consecutivo
-        const ingresos = movimientos.filter((m) => m.deudaId === deudaId && m.tipo === 'Ingreso')
-        const cobro = ingresos.filter((m) => m.fecha === deuda.fechaPago).sort(masReciente)[0] ?? [...ingresos].sort(masReciente)[0]
-        const acciones = [{ type: 'editar', lista: 'deudas', id: deudaId, datos: { fechaPago: fecha } }]
-        if (cobro) acciones.push({ type: 'editar', lista: 'movimientos', id: cobro.id, datos: { fecha } })
-        ejecutar(acciones, () => {
-          const p = repo.actualizar('deudas', deudaId, { fechaPago: fecha })
-          return cobro ? p.then(() => repo.actualizar('movimientos', cobro.id, { fecha })) : p
-        })
+        const delaDeuda = movimientos.filter((m) => m.deudaId === deudaId)
+        const cambios = [{ lista: 'deudas', id: deudaId, datos: {} }]
+        if (fecha && fecha !== deuda.fecha) {
+          cambios[0].datos.fecha = fecha
+          const prestamo = delaDeuda.find((m) => m.tipo === 'Egreso')
+          if (prestamo) cambios.push({ lista: 'movimientos', id: prestamo.id, datos: { fecha } })
+        }
+        if (fechaPago && fechaPago !== deuda.fechaPago) {
+          cambios[0].datos.fechaPago = fechaPago
+          const ingresos = delaDeuda.filter((m) => m.tipo === 'Ingreso')
+          const cobro = ingresos.filter((m) => m.fecha === deuda.fechaPago).sort(masReciente)[0] ?? [...ingresos].sort(masReciente)[0]
+          if (cobro) cambios.push({ lista: 'movimientos', id: cobro.id, datos: { fecha: fechaPago } })
+        }
+        if (!Object.keys(cambios[0].datos).length) return
+        ejecutar(
+          cambios.map((c) => ({ type: 'editar', ...c })),
+          () => cambios.reduce((p, c) => p.then(() => repo.actualizar(c.lista, c.id, c.datos)), Promise.resolve()),
+        )
       },
       prestar: (datos) => {
         const deuda = { id: crypto.randomUUID(), ...datos, pagada: false }
