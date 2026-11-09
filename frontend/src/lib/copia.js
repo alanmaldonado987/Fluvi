@@ -24,7 +24,7 @@ const RESTAURABLES = [
   ['notas_mes', 'notas del mes', ['anio', 'mes', 'texto', 'actualizado_en']],
   // Listas de compras propias (los participantes y las invitaciones no se copian: son de otras personas).
   ['listas_compras', 'listas de compras', ['id', 'nombre', 'compartida', 'creado_en']],
-  ['lista_items', 'ítems de las listas', ['id', 'lista_id', 'nombre', 'precio', 'fecha_compra', 'comprado', 'comprado_en', 'creado_en']],
+  ['lista_items', 'ítems de las listas', ['id', 'lista_id', 'nombre', 'precio', 'fecha_compra', 'comprado', 'comprado_en', 'orden', 'prioridad', 'creado_en']],
 ]
 const TABLAS_CON_ID = new Set(['categorias', 'billeteras', 'recurrentes', 'deudas', 'movimientos', 'metas', 'listas_compras', 'lista_items'])
 // El historial se guarda en la copia como registro, pero no se restaura: lo genera la propia base de datos.

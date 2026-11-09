@@ -82,7 +82,10 @@ export const crearLista = (l) => supabase.from('listas_compras').insert({ id: l.
 export const actualizarLista = (id, datos) => supabase.from('listas_compras').update(datos).eq('id', id).select('id').then(resultado).then(conAlgunaFila)
 export const eliminarLista = (id) => supabase.from('listas_compras').delete().eq('id', id).select('id').then(resultado).then(conAlgunaFila)
 
-export const crearItem = (item) => supabase.from('lista_items').insert(aFilaItem({ id: item.id, listaId: item.listaId, nombre: item.nombre, precio: item.precio, fechaCompra: item.fechaCompra, comprado: item.comprado, compradoEn: item.compradoEn })).then(resultado)
+// El orden de un ítem nuevo lo pone la base (la hora actual, así queda al final). Solo se manda al deshacer un borrado, para que
+// vuelva a su lugar, y únicamente si la base ya tiene la columna.
+export const crearItem = (item, conOrden = false) =>
+  supabase.from('lista_items').insert(aFilaItem({ id: item.id, listaId: item.listaId, nombre: item.nombre, precio: item.precio, fechaCompra: item.fechaCompra, comprado: item.comprado, compradoEn: item.compradoEn, orden: conOrden ? item.orden : undefined, prioridad: item.prioridad || undefined })).then(resultado)
 export const actualizarItem = (id, datos) => supabase.from('lista_items').update(aFilaItem(datos)).eq('id', id).select('id').then(resultado).then(conAlgunaFila)
 export const eliminarItem = (id) => supabase.from('lista_items').delete().eq('id', id).select('id').then(resultado).then(conAlgunaFila)
 

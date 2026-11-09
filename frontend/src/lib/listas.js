@@ -21,7 +21,21 @@ export const aItem = (r) => ({
   comprado: r.comprado,
   compradoEn: r.comprado_en,
   creadoPor: r.creado_por,
+  // Posición manual dentro de la lista; null si la base aún no tiene la columna (migración 20261110120000).
+  orden: r.orden == null ? null : Number(r.orden),
+  // 'alta' | 'media' | 'baja' | null; undefined si la base aún no tiene la columna (migración 20261111120000).
+  prioridad: r.prioridad === undefined ? undefined : (r.prioridad ?? null),
 })
+
+export const PRIORIDADES = [
+  { id: 'alta', etiqueta: 'Alta', peso: 1 },
+  { id: 'media', etiqueta: 'Media', peso: 2 },
+  { id: 'baja', etiqueta: 'Baja', peso: 3 },
+]
+export const pesoPrioridad = (p) => PRIORIDADES.find((x) => x.id === p)?.peso ?? 4
+
+// La prioridad solo se ofrece si la base ya tiene la columna (ningún ítem cargado llega sin ella).
+export const hayPrioridad = (items) => !items.some((i) => i.prioridad === undefined)
 
 export const aMiembro = (r) => ({
   listaId: r.lista_id,
@@ -80,3 +94,39 @@ export const esCorreoValido = (texto) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(St
 
 // Un ítem con fecha, sin comprar, cuya fecha ya pasó.
 export const estaVencido = (item, fechaHoy) => Boolean(item.fechaCompra) && !item.comprado && item.fechaCompra < fechaHoy
+
+// ---- Orden manual de los ítems --------------------------------------------------------------------------------------------
+
+const SEPARACION_MINIMA = 1e-4
+const PASO_RENUMERACION = 1000
+
+// ¿Se puede ordenar a mano? Solo si la base ya tiene la columna `orden` (todos los ítems la traen).
+export const hayOrden = (items) => items.length > 0 && items.every((i) => typeof i.orden === 'number')
+
+// Ítems en el orden en que se ven: primero por `orden`; si no hay, tal como llegaron (por fecha de creación).
+export const ordenarItems = (items) => (hayOrden(items) ? [...items].sort((a, b) => a.orden - b.orden) : items)
+
+// Cambios de `orden` para mover `idMovido` a la posición `indiceDestino` de `lista` (ya ordenada, con ese ítem dentro).
+// Normalmente es un solo cambio: el punto medio entre sus nuevos vecinos. Si los vecinos quedaron demasiado juntos para que
+// quepa uno en medio, se renumera toda la lista. Devuelve [{ id, orden }].
+export function moverItem(lista, idMovido, indiceDestino) {
+  const resto = lista.filter((i) => i.id !== idMovido)
+  const destino = Math.max(0, Math.min(indiceDestino, resto.length))
+  const anterior = resto[destino - 1]?.orden
+  const siguiente = resto[destino]?.orden
+  if (anterior != null && siguiente != null && siguiente - anterior < SEPARACION_MINIMA) {
+    const movido = lista.find((i) => i.id === idMovido)
+    const final = [...resto.slice(0, destino), movido, ...resto.slice(destino)]
+    return final.map((i, n) => ({ id: i.id, orden: (n + 1) * PASO_RENUMERACION }))
+  }
+  let orden = 1
+  if (anterior == null && siguiente != null) orden = siguiente - 1
+  else if (anterior != null && siguiente == null) orden = anterior + 1
+  else if (anterior != null && siguiente != null) orden = (anterior + siguiente) / 2
+  return [{ id: idMovido, orden }]
+}
+
+// Cambios para dejar `lista` en el orden dado (p. ej. "ordenar por precio"): renumera solo lo que cambia de posición.
+export function reasignarOrden(listaEnNuevoOrden) {
+  return listaEnNuevoOrden.map((i, n) => ({ id: i.id, orden: (n + 1) * PASO_RENUMERACION })).filter((c, n) => listaEnNuevoOrden[n].orden !== c.orden)
+}

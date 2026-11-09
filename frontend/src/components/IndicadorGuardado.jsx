@@ -33,7 +33,7 @@ export function IndicadorGuardado() {
   const mostrado = visible ? fase : ultima
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] z-30 flex justify-center md:bottom-6" role="status" aria-live="polite">
+    <div className="pointer-events-none fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+5.5rem+var(--guardado-extra,0rem))] z-30 flex justify-center md:bottom-[calc(1.5rem+var(--guardado-extra,0rem))]" role="status" aria-live="polite">
       <div
         aria-hidden={!visible}
         className={cn(

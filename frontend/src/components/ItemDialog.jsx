@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { Campo } from '@/components/Campo'
 import { hojaMovil } from '@/components/hojaMovil'
+import { SelectorPrioridad } from '@/components/listas/Prioridad'
 import { MoneyInput } from '@/components/MoneyInput'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 
-function Formulario({ item, onGuardar }) {
+function Formulario({ item, onGuardar, conPrioridad }) {
+  const [prioridad, setPrioridad] = useState(item?.prioridad ?? null)
   const [nombre, setNombre] = useState(item?.nombre ?? '')
   const [precio, setPrecio] = useState(item?.precio ?? 0)
   const [fechaCompra, setFechaCompra] = useState(item?.fechaCompra ?? '')
@@ -14,7 +16,7 @@ function Formulario({ item, onGuardar }) {
 
   const enviar = (e) => {
     e.preventDefault()
-    if (valido) onGuardar({ nombre, precio, fechaCompra })
+    if (valido) onGuardar({ nombre, precio, fechaCompra, ...(conPrioridad ? { prioridad } : {}) })
   }
 
   return (
@@ -30,6 +32,11 @@ function Formulario({ item, onGuardar }) {
           <Input type="date" value={fechaCompra} onChange={(e) => setFechaCompra(e.target.value)} />
         </Campo>
       </div>
+      {conPrioridad ? (
+        <Campo label="Prioridad (opcional)">
+          <SelectorPrioridad valor={prioridad} onCambiar={setPrioridad} />
+        </Campo>
+      ) : null}
       {fechaCompra ? (
         <button type="button" onClick={() => setFechaCompra('')} className="justify-self-start rounded-md text-xs font-semibold text-forest underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
           Quitar la fecha
@@ -45,7 +52,7 @@ function Formulario({ item, onGuardar }) {
   )
 }
 
-export function ItemDialog({ open, onOpenChange, item = null, onGuardar }) {
+export function ItemDialog({ open, onOpenChange, item = null, onGuardar, conPrioridad = false }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={hojaMovil}>
@@ -57,6 +64,7 @@ export function ItemDialog({ open, onOpenChange, item = null, onGuardar }) {
           <Formulario
             key={item?.id ?? 'nuevo'}
             item={item}
+            conPrioridad={conPrioridad}
             onGuardar={(datos) => {
               onGuardar(datos)
               onOpenChange(false)

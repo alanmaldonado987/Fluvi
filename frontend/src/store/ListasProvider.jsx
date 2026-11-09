@@ -4,7 +4,7 @@ import { Outlet } from 'react-router-dom'
 import { toast } from 'sonner'
 import { comenzarGuardado, terminarGuardado } from '@/lib/guardado'
 import { refrescarInvitaciones } from '@/lib/invitaciones'
-import { faltaMigracion } from '@/lib/listas'
+import { faltaMigracion, hayOrden } from '@/lib/listas'
 import * as repo from '@/lib/listasRepo'
 import { useAuth } from './auth'
 import { ListasContext } from './listasContext'
@@ -169,12 +169,13 @@ export function ListasProvider({ children }) {
         if (empiezaACompartir) invitarDespues(id, correos, () => guardada)
       },
       eliminarLista: (id) => ejecutar({ type: 'quitarLista', id }, () => repo.eliminarLista(id)),
-      agregarItem: (listaId, { nombre, precio, fechaCompra }) => {
-        const item = { id: nuevoId(), listaId, nombre: nombre.trim(), precio: precio || 0, fechaCompra: fechaCompra || null, comprado: false, compradoEn: null, creadoPor: yo.id }
+      agregarItem: (listaId, { nombre, precio, fechaCompra, prioridad }) => {
+        const item = { id: nuevoId(), listaId, nombre: nombre.trim(), precio: precio || 0, fechaCompra: fechaCompra || null, prioridad: prioridad || null, comprado: false, compradoEn: null, creadoPor: yo.id, orden: Date.now() / 1000 }
         ejecutar({ type: 'agregarItem', item }, () => repo.crearItem(item))
       },
-      editarItem: (id, { nombre, precio, fechaCompra }) => {
+      editarItem: (id, { nombre, precio, fechaCompra, prioridad }) => {
         const datos = { nombre: nombre.trim(), precio: precio || 0, fechaCompra: fechaCompra || null }
+        if (prioridad !== undefined) datos.prioridad = prioridad || null
         ejecutar({ type: 'editarItem', id, datos }, () => repo.actualizarItem(id, datos))
       },
       marcarComprado: (id, comprado) => {
@@ -182,8 +183,16 @@ export function ListasProvider({ children }) {
         ejecutar({ type: 'editarItem', id, datos }, () => repo.actualizarItem(id, datos))
       },
       eliminarItem: (id) => ejecutar({ type: 'quitarItem', id }, () => repo.eliminarItem(id)),
+      // Mueve ítems de lugar: `cambios` es [{ id, orden }] (ver moverItem y reasignarOrden en lib/listas.js).
+      reordenarItems: (cambios) => {
+        if (!cambios.length) return
+        ejecutar(
+          cambios.map((c) => ({ type: 'editarItem', id: c.id, datos: { orden: c.orden } })),
+          () => Promise.all(cambios.map((c) => repo.actualizarItem(c.id, { orden: c.orden }))),
+        )
+      },
       // Deshacer un borrado: vuelve a crear el ítem con los mismos datos.
-      restaurarItem: (item) => ejecutar({ type: 'agregarItem', item }, () => repo.crearItem(item)),
+      restaurarItem: (item) => ejecutar({ type: 'agregarItem', item }, () => repo.crearItem(item, hayOrden(estadoRef.current.items))),
       // La invitación la resuelve el servidor (busca al usuario por su correo), así que no hay cambio optimista: si falla,
       // el mensaje llega a quien la llamó para mostrarlo en el diálogo. Después se pide el correo de aviso (un extra): devuelve
       // { correo } para saber si salió.
