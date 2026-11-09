@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils'
 const etiquetaDe = (id) => PRIORIDADES.find((p) => p.id === id)?.etiqueta
 
 // Ficha de prioridad de un ítem: muestra "Alta", "Media" o "Baja" y, si se puede editar, abre un menú para cambiarla.
-export function FichaPrioridad({ item, puedeEditar, onCambiar }) {
+export function FichaPrioridad({ item, puedeEditar, onCambiar, onAbrir }) {
   const actual = item.prioridad
   if (!actual && !puedeEditar) return null
   const ficha = (
@@ -18,12 +18,12 @@ export function FichaPrioridad({ item, puedeEditar, onCambiar }) {
   )
   const clases = cn(
     'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lc-acento)]',
-    actual ? estiloPrioridad[actual] : 'text-muted-foreground opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 data-[popup-open]:opacity-100 [@media(hover:none)]:opacity-60',
+    actual ? estiloPrioridad[actual] : 'text-muted-foreground opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 group-data-[activa=true]:opacity-100 data-[popup-open]:opacity-100 [@media(hover:none)]:opacity-60',
     puedeEditar && 'hover:brightness-95',
   )
   if (!puedeEditar) return <span className={clases}>{ficha}</span>
   return (
-    <DropdownMenu>
+    <DropdownMenu onOpenChange={onAbrir}>
       <DropdownMenuTrigger render={<button type="button" className={clases} aria-label={actual ? `Prioridad de ${item.nombre}: ${etiquetaDe(actual)}. Tocar para cambiar` : `Agregar prioridad a ${item.nombre}`} />}>{ficha}</DropdownMenuTrigger>
       <DropdownMenuContent align="start">
         {PRIORIDADES.map((p) => (

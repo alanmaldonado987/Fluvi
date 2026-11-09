@@ -194,6 +194,7 @@
 }
 
 /* ---- Listas de compras: identidad propia del módulo (violeta + coral) y sus animaciones ---------------------------------- */
+:root,
 .lista-viva {
   --lc-acento: #6a58f2;
   --lc-acento-suave: #ece9ff;
@@ -208,6 +209,7 @@
   --lc-hoy-suave: #fff1d0;
   --lc-hoy-texto: #8a5b00;
 }
+.dark,
 .dark .lista-viva {
   --lc-acento: #8d80ff;
   --lc-acento-suave: #272352;

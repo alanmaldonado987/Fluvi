@@ -1,7 +1,7 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { CalendarPlus, Check, EllipsisVertical, GripVertical, Pencil, Trash2 } from 'lucide-react'
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { CampoEditable } from '@/components/listas/CampoEditable'
 import { FichaPrioridad } from '@/components/listas/Prioridad'
 import { Money } from '@/components/Money'
@@ -35,7 +35,7 @@ function FichaFecha({ item, fechaHoy, puedeEditar, onCambiar }) {
         aria-label={item.fechaCompra ? `Fecha de ${item.nombre}: ${fechaCorta(item.fechaCompra)}. Tocar para cambiar` : `Agregar fecha a ${item.nombre}`}
         className={cn(
           'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lc-acento)]',
-          !item.fechaCompra && 'text-muted-foreground opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-60',
+          !item.fechaCompra && 'text-muted-foreground opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 group-data-[activa=true]:opacity-100 [@media(hover:none)]:opacity-60',
           item.fechaCompra && !vencido && !esHoy && 'bg-muted text-muted-foreground',
           vencido && 'bg-[var(--lc-alerta-suave)] text-[var(--lc-alerta-texto)]',
           esHoy && 'bg-[var(--lc-hoy-suave)] text-[var(--lc-hoy-texto)]',
@@ -81,10 +81,12 @@ export function FilaItem({ item, indice = 0, permisos, fechaHoy, conPrioridad, m
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id, disabled: !arrastrable, transition: transicionSuave })
   const gesto = useDeslizar({ alDerecha: permisos.editar ? () => onMarcar(item.id, !marcado) : undefined, alIzquierda: permisos.eliminar ? () => onEliminar(item) : undefined })
 
+  // Con un menú abierto (se dibuja fuera de la fila) el cursor deja de estar sobre ella: se mantiene activa para que no desaparezcan sus botones.
+  const [menuAbierto, setMenuAbierto] = useState(false)
   const tieneFichas = Boolean(item.fechaCompra) || Boolean(conPrioridad && item.prioridad)
   const fichas = (
     <>
-      {conPrioridad ? <FichaPrioridad item={item} puedeEditar={permisos.editar} onCambiar={(datos) => onCambiar(item.id, datos)} /> : null}
+      {conPrioridad ? <FichaPrioridad item={item} puedeEditar={permisos.editar} onCambiar={(datos) => onCambiar(item.id, datos)} onAbrir={setMenuAbierto} /> : null}
       <FichaFecha item={{ ...item, comprado: marcado }} fechaHoy={fechaHoy} puedeEditar={permisos.editar} onCambiar={(datos) => onCambiar(item.id, datos)} />
     </>
   )
@@ -102,6 +104,7 @@ export function FilaItem({ item, indice = 0, permisos, fechaHoy, conPrioridad, m
         <div
           {...gesto.manejadores}
           style={{ transform: `translateX(${gesto.dx}px)`, transition: gesto.suelto ? 'transform 240ms var(--ease-out)' : 'none', touchAction: 'pan-y' }}
+          data-activa={menuAbierto}
           className={cn('group relative flex items-center gap-2 rounded-2xl border bg-card py-2.5 pr-2 pl-1.5 transition-colors', marcado && 'bg-card/70')}
         >
           {arrastrable ? (
@@ -110,7 +113,7 @@ export function FilaItem({ item, indice = 0, permisos, fechaHoy, conPrioridad, m
               {...attributes}
               {...listeners}
               aria-label={`Mover ${item.nombre}`}
-              className="grid h-8 w-6 shrink-0 cursor-grab touch-none place-items-center rounded-md text-muted-foreground/60 transition-opacity hover:text-muted-foreground focus-visible:outline-2 focus-visible:outline-[var(--lc-acento)] active:cursor-grabbing md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
+              className="grid h-8 w-6 shrink-0 cursor-grab touch-none place-items-center rounded-md text-muted-foreground/60 transition-opacity hover:text-muted-foreground focus-visible:outline-2 focus-visible:outline-[var(--lc-acento)] active:cursor-grabbing md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 md:group-data-[activa=true]:opacity-100"
             >
               <GripVertical className="size-4" aria-hidden="true" />
             </button>
@@ -152,7 +155,7 @@ export function FilaItem({ item, indice = 0, permisos, fechaHoy, conPrioridad, m
             mostrar={<Money value={item.precio} className={cn('text-[15px] font-semibold tabular-nums', marcado ? 'text-muted-foreground' : item.precio ? 'text-foreground' : 'text-muted-foreground')} />}
           />
 
-          <span className="hidden shrink-0 items-center md:flex md:opacity-0 md:transition-opacity md:group-hover:opacity-100 md:group-focus-within:opacity-100">
+          <span className="hidden shrink-0 items-center md:flex md:opacity-0 md:transition-opacity md:group-hover:opacity-100 md:group-focus-within:opacity-100 md:group-data-[activa=true]:opacity-100">
             {permisos.editar ? (
               <Button variant="ghost" size="icon" className="size-8" aria-label={`Editar ${item.nombre}`} onClick={() => onEditar(item)}>
                 <Pencil />
