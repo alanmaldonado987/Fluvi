@@ -1,19 +1,12 @@
 import { CircleHelp, LogOut, Settings } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Avatar } from '@/components/Avatar'
 import { CerrarSesionDialog } from '@/components/CerrarSesionDialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 import { VERSION } from '@/lib/version'
 import { useAuth } from '@/store/auth'
-
-const iniciales = (nombre) =>
-  nombre
-    .split(' ')
-    .slice(0, 2)
-    .map((p) => p[0])
-    .join('')
-    .toUpperCase()
 
 export function UsuarioMenu({ compacto = false, side = compacto ? 'bottom' : 'top', onTutorial }) {
   const { usuario } = useAuth()
@@ -30,7 +23,7 @@ export function UsuarioMenu({ compacto = false, side = compacto ? 'bottom' : 'to
             compacto ? 'p-0.5' : 'w-full p-1.5 pr-3',
           )}
         >
-          <span className="grid size-9 shrink-0 place-items-center rounded-full bg-forest text-sm font-bold text-on-forest">{iniciales(usuario.nombre)}</span>
+          <Avatar nombre={usuario.nombre} url={usuario.avatar} className="size-9 text-sm" />
           {compacto ? null : (
             <span className="min-w-0">
               <span className="block truncate text-sm font-semibold">{usuario.nombre}</span>

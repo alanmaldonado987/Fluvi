@@ -1,7 +1,8 @@
-import { ArchiveRestore, Bell, Check, ChevronRight, CircleCheck, Clock, Database, Download, Eye, EyeOff, LoaderCircle, LogOut, Monitor, MonitorSmartphone, Moon, Palette, Shield, Sun, Trash2, TriangleAlert, User } from 'lucide-react'
+import { ArchiveRestore, Bell, Camera, Check, ChevronRight, CircleCheck, Clock, Database, Download, Eye, EyeOff, LoaderCircle, LogOut, Monitor, MonitorSmartphone, Moon, Palette, Shield, Sun, Trash2, TriangleAlert, User } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Navigate, NavLink, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
+import { Avatar } from '@/components/Avatar'
 import { BorrarDatosDialog } from '@/components/BorrarDatosDialog'
 import { Campo } from '@/components/Campo'
 import { CerrarSesionDialog } from '@/components/CerrarSesionDialog'
@@ -12,6 +13,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { MoneyInput } from '@/components/MoneyInput'
 import { Switch } from '@/components/ui/switch'
+import { borrarAvatar, prepararImagen, subirAvatar } from '@/lib/avatar'
 import { crearCopia, descargarCopia, leerCopia, MAX_BYTES, ultimaCopia } from '@/lib/copia'
 import { exportarExcel } from '@/lib/excel'
 import { fechaHora, fechaLarga } from '@/lib/format'
@@ -40,15 +42,6 @@ const mensajesCuenta = {
 const foco = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring'
 const MINIMO_CLAVE = 6
 
-const iniciales = (nombre) =>
-  nombre
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((p) => p[0])
-    .join('')
-    .toUpperCase()
-
 // Grupo de ajustes: título fuera de la tarjeta, filas separadas por líneas y una nota al pie opcional.
 function Grupo({ titulo, nota, peligro = false, children }) {
   return (
@@ -76,6 +69,57 @@ function useGuardar() {
   }
 }
 
+// Subir, cambiar o quitar la foto de perfil. La imagen se recorta en cuadrado y se reduce antes de subirla.
+function FotoPerfil() {
+  const { usuario, actualizar } = useAuth()
+  const entrada = useRef(null)
+  const [trabajando, setTrabajando] = useState(false)
+
+  const cambiar = async (e) => {
+    const archivo = e.target.files?.[0]
+    e.target.value = ''
+    if (!archivo) return
+    setTrabajando(true)
+    try {
+      const url = await subirAvatar(usuario.id, await prepararImagen(archivo))
+      await actualizar({ data: { avatar: url } })
+      toast.success('Foto de perfil actualizada.')
+    } catch (err) {
+      toast.error(['tipo', 'peso', 'ilegible'].includes(err.code) ? err.message : 'No se pudo subir la foto. Inténtalo de nuevo.')
+    } finally {
+      setTrabajando(false)
+    }
+  }
+
+  const quitar = async () => {
+    setTrabajando(true)
+    try {
+      await actualizar({ data: { avatar: null } })
+      await borrarAvatar(usuario.id).catch(() => {})
+      toast.success('Foto de perfil quitada.')
+    } catch {
+      toast.error('No se pudo quitar la foto.')
+    } finally {
+      setTrabajando(false)
+    }
+  }
+
+  return (
+    <div className="mt-3 flex flex-wrap items-center gap-2">
+      <input ref={entrada} type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" tabIndex={-1} aria-label="Elegir foto de perfil" onChange={cambiar} />
+      <Button type="button" variant="outline" size="sm" disabled={trabajando} onClick={() => entrada.current?.click()}>
+        {trabajando ? <LoaderCircle className="animate-spin" /> : <Camera />}
+        {usuario.avatar ? 'Cambiar foto' : 'Subir foto'}
+      </Button>
+      {usuario.avatar ? (
+        <Button type="button" variant="ghost" size="sm" disabled={trabajando} className="text-muted-foreground" onClick={quitar}>
+          <Trash2 /> Quitar
+        </Button>
+      ) : null}
+    </div>
+  )
+}
+
 function Perfil() {
   const { usuario } = useAuth()
   const guardar = useGuardar()
@@ -84,12 +128,11 @@ function Perfil() {
   return (
     <>
       <div className="superficie flex items-center gap-4 p-4 sm:p-5">
-        <span className="grid size-14 shrink-0 place-items-center rounded-full bg-forest text-lg font-bold text-on-forest" aria-hidden="true">
-          {iniciales(usuario.nombre)}
-        </span>
-        <div className="min-w-0">
+        <Avatar nombre={usuario.nombre} url={usuario.avatar} className="size-20 text-2xl" />
+        <div className="min-w-0 flex-1">
           <p className="truncate font-semibold">{usuario.nombre}</p>
           <p className="truncate text-sm text-muted-foreground">{usuario.email}</p>
+          <FotoPerfil />
         </div>
       </div>
       <Grupo
@@ -517,7 +560,7 @@ export default function Configuracion() {
   return (
     <div className="grid gap-5">
       <PageHeader title="Configuración" description="Ajustes de tu cuenta y de la app." cifras={false} />
-      <div className="grid items-start gap-6 lg:grid-cols-[13rem_minmax(0,1fr)] xl:grid-cols-[14rem_minmax(0,46rem)] xl:gap-10">
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[13rem_minmax(0,1fr)] xl:grid-cols-[14rem_minmax(0,46rem)] xl:gap-10">
         <nav ref={navRef} aria-label="Secciones de configuración" className="-mx-4 overflow-x-auto px-4 [scrollbar-width:none] lg:sticky lg:top-6 lg:mx-0 lg:overflow-visible lg:px-0">
           <ul className="flex w-max gap-1 lg:grid lg:w-auto lg:gap-0.5">
             {secciones.map(({ id, label, icon: Icon }) => (
@@ -543,7 +586,7 @@ export default function Configuracion() {
             ))}
           </ul>
         </nav>
-        <section key={actual.id} className={cn('grid content-start gap-6', entrada)} aria-labelledby="seccion-titulo">
+        <section key={actual.id} className={cn('grid grid-cols-1 content-start gap-6', entrada)} aria-labelledby="seccion-titulo">
           <div>
             <h2 id="seccion-titulo" className="text-xl">
               {actual.label}

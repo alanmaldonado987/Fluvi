@@ -13,6 +13,7 @@ const aUsuario = (sesion) =>
         id: sesion.user.id,
         email: sesion.user.email,
         nombre: sesion.user.user_metadata?.nombre || nombreDe(sesion.user.email),
+        avatar: sesion.user.user_metadata?.avatar ?? null,
         preferencias: { ...PREFERENCIAS, ...(sesion.user.user_metadata?.preferencias ?? {}) },
         correoConfirmado: Boolean(sesion.user.email_confirmed_at),
         tutorialVisto: Boolean(sesion.user.user_metadata?.tutorialVisto),
