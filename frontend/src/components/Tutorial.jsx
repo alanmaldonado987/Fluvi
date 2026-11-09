@@ -20,7 +20,8 @@ const pasos = [
   { ruta: '/listas', titulo: 'Agrega y edita rápido', texto: 'Dentro de una lista, escribe en la barra de abajo y pulsa Enter para agregar. Para cambiar un nombre, un precio, una fecha o una prioridad, tócalos y escribe.' },
   { ruta: '/listas', titulo: 'Ordena y marca', texto: 'Arrastra el asa de un ítem para cambiar su lugar, o suéltalo sobre la zona de comprado. Márcalo con el círculo y pasará a «Comprados». En el celular también puedes deslizarlo: a la derecha lo marca y a la izquierda lo elimina.' },
   { objetivo: 'privado', titulo: 'Modo privado', texto: 'Oculta todas las cifras con un toque, útil cuando revisas tus finanzas en público.' },
-  { objetivo: 'usuario', titulo: 'Tu cuenta', texto: 'Desde tu menú entras a Configuración: perfil, qué avisos recibir en la campana, tema oscuro, copia de seguridad y cierre de sesión.' },
+  { objetivo: 'usuario', titulo: 'Tu cuenta', texto: 'Desde tu menú entras a Configuración: tu perfil, qué avisos recibir en la campana, tema oscuro, copia de seguridad y cierre de sesión.' },
+  { objetivo: 'usuario', titulo: 'Tu foto de perfil', texto: 'En Configuración → Perfil puedes subir una foto tuya. Se recorta en cuadrado y aparece aquí, en lugar de las iniciales de tu nombre. Puedes cambiarla o quitarla cuando quieras.' },
   { ruta: '/', titulo: 'Eso es todo', texto: 'Empieza creando tus categorías en Presupuesto, o importa tu Excel y tendrás todo listo en un minuto.', final: true },
 ]
 
