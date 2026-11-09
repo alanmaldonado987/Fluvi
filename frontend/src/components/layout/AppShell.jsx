@@ -1,4 +1,4 @@
-import { ArrowLeftRight, ChartPie, Ellipsis, HandCoins, House, PanelLeftClose, PanelLeftOpen, Wallet, Waves } from 'lucide-react'
+import { ArrowLeftRight, ChartPie, Ellipsis, HandCoins, House, ListChecks, PanelLeftClose, PanelLeftOpen, Wallet, Waves } from 'lucide-react'
 import { useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { BotonPrivado } from '@/components/BotonPrivado'
@@ -9,6 +9,7 @@ import { Tutorial } from '@/components/Tutorial'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { UsuarioMenu } from '@/components/UsuarioMenu'
+import { useInvitaciones, useVigilarInvitaciones } from '@/lib/invitaciones'
 import { entradaPagina } from '@/lib/motion'
 import { cn } from '@/lib/utils'
 import { VERSION } from '@/lib/version'
@@ -21,21 +22,35 @@ const rutas = [
   { to: '/billeteras', label: 'Billeteras', icon: Wallet, tour: 'billeteras' },
   { to: '/deudas', label: 'Deudas', icon: HandCoins, tour: 'deudas', secundaria: true },
   { to: '/flujo', label: 'Flujo', icon: Waves, tour: 'flujo', secundaria: true },
+  { to: '/listas', label: 'Listas', icon: ListChecks, tour: 'listas', secundaria: true },
 ]
 
 const rutasMovil = rutas.filter((r) => !r.secundaria)
 const rutasMas = rutas.filter((r) => r.secundaria)
+
+// Avisa que hay invitaciones a listas sin responder: un número junto al nombre, o un punto cuando no hay espacio.
+function Insignia({ cantidad, punto = false, className }) {
+  if (!cantidad) return null
+  return punto ? (
+    <span aria-hidden="true" className={cn('absolute size-2.5 rounded-full bg-gold ring-2 ring-card', className)} />
+  ) : (
+    <span aria-hidden="true" className={cn('grid min-w-5 place-items-center rounded-full bg-gold px-1.5 text-[11px] leading-5 font-bold text-[#14231b] tabular-nums', className)}>
+      {cantidad}
+    </span>
+  )
+}
 const pastilla = 'flex h-11 items-center rounded-full px-1.5 text-xs font-semibold transition-[background-color,color,padding] duration-300 ease-out'
 
 // En móvil solo caben cuatro destinos con comodidad: el resto va en "Más", que muestra el destino activo cuando estás en uno de ellos.
-function MasMovil({ pathname }) {
+function MasMovil({ pathname, invitaciones }) {
   const [abierto, setAbierto] = useState(false)
   const activa = rutasMas.find(({ to }) => pathname.startsWith(to))
   const Icono = activa?.icon ?? Ellipsis
   return (
     <Popover open={abierto} onOpenChange={setAbierto}>
-      <PopoverTrigger data-tour="mas" aria-label={activa ? `Más: ${activa.label}` : 'Más secciones'} render={<button type="button" className={cn(pastilla, foco, activa ? 'bg-mint px-3 text-forest' : 'text-muted-foreground')} />}>
+      <PopoverTrigger data-tour="mas" aria-label={activa ? `Más: ${activa.label}` : 'Más secciones'} render={<button type="button" className={cn(pastilla, 'relative', foco, activa ? 'bg-mint px-3 text-forest' : 'text-muted-foreground')} />}>
         <Icono className="size-5 shrink-0" aria-hidden="true" />
+        {activa ? null : <Insignia cantidad={invitaciones} punto className="top-1.5 right-0.5" />}
         <span className={cn('grid transition-[grid-template-columns] duration-300 ease-out', activa ? 'grid-cols-[1fr]' : 'grid-cols-[0fr]')}>
           <span className="min-w-0 overflow-hidden whitespace-nowrap">
             <span className="block pl-1.5">{activa?.label ?? 'Más'}</span>
@@ -53,6 +68,7 @@ function MasMovil({ pathname }) {
               >
                 <Icon className="size-5 shrink-0" aria-hidden="true" />
                 {label}
+                {to === '/listas' ? <Insignia cantidad={invitaciones} className="ml-auto" /> : null}
               </NavLink>
             </li>
           ))}
@@ -79,6 +95,8 @@ const leerColapsado = () => {
 export function AppShell() {
   const { pathname } = useLocation()
   const { usuario, actualizar } = useAuth()
+  useVigilarInvitaciones(usuario.id)
+  const invitaciones = useInvitaciones().length
   const [colapsado, setColapsado] = useState(leerColapsado)
   const [tutorial, setTutorial] = useState(() => !usuario.tutorialVisto)
   const activo = rutas.findIndex(({ to }) => (to === '/' ? pathname === '/' : pathname.startsWith(to)))
@@ -124,6 +142,7 @@ export function AppShell() {
               className={({ isActive }) =>
                 cn(
                   'flex items-center gap-3 rounded-full text-sm font-semibold transition-colors',
+                  'relative',
                   colapsado ? 'size-11 justify-center' : 'px-4 py-2.5',
                   foco,
                   isActive ? 'text-forest' : 'text-muted-foreground hover:bg-muted hover:text-foreground',
@@ -132,6 +151,7 @@ export function AppShell() {
             >
               <Icon className="size-5 shrink-0" aria-hidden="true" />
               <span className={cn(colapsado && 'sr-only')}>{label}</span>
+              {to === '/listas' ? <Insignia cantidad={invitaciones} punto={colapsado} className={colapsado ? 'top-1 right-1' : 'ml-auto'} /> : null}
             </NavLink>
           ))}
         </nav>
@@ -181,7 +201,7 @@ export function AppShell() {
             </li>
           ))}
           <li>
-            <MasMovil pathname={pathname} />
+            <MasMovil pathname={pathname} invitaciones={invitaciones} />
           </li>
         </ul>
       </nav>

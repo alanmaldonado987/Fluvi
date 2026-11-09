@@ -459,7 +459,7 @@ function Datos() {
       <Grupo titulo="Copia de seguridad completa" nota={ultima ? `Última copia descargada: ${fechaHora(ultima).replace(/\.?$/, '.')}` : 'Aún no has descargado una copia completa.'}>
         <Fila className="flex-col items-stretch sm:flex-row sm:items-center">
           <p className="flex-1 text-sm text-muted-foreground">
-            Guarda en un solo archivo todo lo que tienes en Fluvi, de todos los años: categorías, billeteras, movimientos, presupuestos, saldos, deudas, metas, recurrentes, notas, historial de cambios y tus preferencias. Hoy son {state.categorias.length} categorías, {state.billeteras.length} billeteras y {total} {total === 1 ? 'movimiento' : 'movimientos'}.
+            Guarda en un solo archivo todo lo que tienes en Fluvi, de todos los años: categorías, billeteras, movimientos, presupuestos, saldos, deudas, metas, recurrentes, notas, tus listas de compras, historial de cambios y tus preferencias. Hoy son {state.categorias.length} categorías, {state.billeteras.length} billeteras y {total} {total === 1 ? 'movimiento' : 'movimientos'}.
           </p>
           <Button className="shrink-0 self-start sm:self-center" onClick={respaldar} disabled={respaldando}>
             {respaldando ? <LoaderCircle className="animate-spin" aria-hidden="true" /> : <Download />} Descargar copia completa
@@ -475,7 +475,7 @@ function Datos() {
           <input ref={entradaCopia} type="file" accept=".json,application/json" className="sr-only" onChange={elegirCopia} aria-label="Archivo de copia de seguridad" />
         </Fila>
       </Grupo>
-      <Grupo titulo="Exportar a Excel" nota="El Excel es para consultar o compartir un año: no incluye deudas, metas, recurrentes ni notas. Para respaldar todo, usa la copia completa.">
+      <Grupo titulo="Exportar a Excel" nota="El Excel es para consultar o compartir un año: no incluye deudas, metas, recurrentes, notas ni listas de compras. Para respaldar todo, usa la copia completa.">
         <Fila className="flex-col items-stretch sm:flex-row sm:items-center">
           <p className="flex-1 text-sm text-muted-foreground">Descarga tus datos del {state.anio} en un Excel con la misma estructura de tu archivo de finanzas (Ingresos, Egresos, Caja, Registros).</p>
           <Button variant="outline" className="shrink-0 self-start sm:self-center" onClick={descargar} disabled={exportando}>
@@ -486,7 +486,7 @@ function Datos() {
       <Grupo titulo="Borrar todos mis datos" peligro>
         <Fila className="flex-col items-stretch sm:flex-row sm:items-center">
           <p className="flex-1 text-sm text-muted-foreground">
-            Deja la cuenta vacía, como recién creada: se borran categorías, billeteras, movimientos, presupuestos, deudas, metas, recurrentes y notas. Tu usuario y tu contraseña se conservan. Descarga una copia completa antes si quieres guardarlos.
+            Deja la cuenta vacía, como recién creada: se borran categorías, billeteras, movimientos, presupuestos, deudas, metas, recurrentes, notas y listas de compras (y sales de las listas que te compartieron). Tu usuario y tu contraseña se conservan. Descarga una copia completa antes si quieres guardarlos.
           </p>
           <Button variant="destructive" className="shrink-0 self-start sm:self-center" onClick={() => setBorrando(true)}>
             <Trash2 /> Borrar todos mis datos

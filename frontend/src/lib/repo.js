@@ -44,7 +44,7 @@ const aDeuda = (r) => ({
 // Cada consulta se ordena también por una columna única para que ninguna fila se repita ni se salte entre tandas.
 const TANDA = 1000
 
-const consultar = async (tabla, ordenes) => {
+export const consultar = async (tabla, ordenes) => {
   const filas = []
   for (;;) {
     let q = supabase.from(tabla).select('*', { count: 'exact' })
@@ -122,9 +122,25 @@ export const TABLAS_COPIA = [
   ['movimientos_historial', ['id']],
 ]
 
-export async function exportarCopia() {
-  const filas = await Promise.all(TABLAS_COPIA.map(([tabla, ordenes]) => consultar(tabla, ordenes)))
-  return Object.fromEntries(TABLAS_COPIA.map(([tabla], i) => [tabla, filas[i]]))
+// Tablas de las listas de compras (módulo aparte): solo se copian las listas propias y sus ítems; los participantes no, porque
+// son otras personas. Si la migración del módulo aún no está aplicada, las tablas no existen y simplemente no hay nada que copiar.
+const faltaTabla = (err) => err?.code === 'PGRST205' || err?.code === '42P01'
+
+async function copiarListas(usuarioId) {
+  try {
+    const listas = (await consultar('listas_compras', ['creado_en', 'id'])).filter((l) => l.user_id === usuarioId)
+    const propias = new Set(listas.map((l) => l.id))
+    const items = (await consultar('lista_items', ['creado_en', 'id'])).filter((i) => propias.has(i.lista_id))
+    return { listas_compras: listas, lista_items: items }
+  } catch (err) {
+    if (faltaTabla(err)) return { listas_compras: [], lista_items: [] }
+    throw err
+  }
+}
+
+export async function exportarCopia(usuarioId) {
+  const [filas, listas] = await Promise.all([Promise.all(TABLAS_COPIA.map(([tabla, ordenes]) => consultar(tabla, ordenes))), copiarListas(usuarioId)])
+  return { ...Object.fromEntries(TABLAS_COPIA.map(([tabla], i) => [tabla, filas[i]])), ...listas }
 }
 
 // Agrega o actualiza filas por su llave primaria; nunca borra las que ya existen.

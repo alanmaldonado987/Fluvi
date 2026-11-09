@@ -6,6 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { actualizarAvisos, useAvisos } from '@/lib/avisos'
 import { recordatorios } from '@/lib/calc'
 import { useHoy } from '@/lib/hoy'
+import { useInvitaciones } from '@/lib/invitaciones'
 import { useFormatoMoneda } from '@/lib/privado'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/store/auth'
@@ -55,7 +56,13 @@ export function Campana({ variant = 'ghost', className }) {
     const [anio, mes, dia] = fechaHoy.split('-').map(Number)
     return new Date(anio, mes - 1, dia, 12)
   }, [fechaHoy])
-  const todos = recordatorios(state, usuario.preferencias, formatear, ahora)
+  // Las invitaciones a listas compartidas llegan como avisos, antes que los demás.
+  const invitaciones = useInvitaciones().map((i) => ({
+    id: `invitacion-${i.listaId}`,
+    texto: `${i.propietarioNombre || i.propietarioEmail.split('@')[0]} te invitó a la lista «${i.nombre}».`,
+    ruta: '/listas',
+  }))
+  const todos = activos ? [...invitaciones, ...recordatorios(state, usuario.preferencias, formatear, ahora)] : []
   const vigentes = todos.map((r) => r.id)
   const visibles = todos.filter((r) => !descartados.includes(r.id))
   const pendientes = visibles.filter((r) => !r.positivo)

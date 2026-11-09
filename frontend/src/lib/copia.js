@@ -22,8 +22,11 @@ const RESTAURABLES = [
   ['recurrentes_omitidos', 'recurrentes omitidos', ['recurrente_id', 'anio', 'mes']],
   ['metas', 'metas', ['id', 'nombre', 'objetivo', 'categoria_id', 'fecha_inicio', 'fecha_limite', 'creado_en']],
   ['notas_mes', 'notas del mes', ['anio', 'mes', 'texto', 'actualizado_en']],
+  // Listas de compras propias (los participantes y las invitaciones no se copian: son de otras personas).
+  ['listas_compras', 'listas de compras', ['id', 'nombre', 'compartida', 'creado_en']],
+  ['lista_items', 'ítems de las listas', ['id', 'lista_id', 'nombre', 'precio', 'fecha_compra', 'comprado', 'comprado_en', 'creado_en']],
 ]
-const TABLAS_CON_ID = new Set(['categorias', 'billeteras', 'recurrentes', 'deudas', 'movimientos', 'metas'])
+const TABLAS_CON_ID = new Set(['categorias', 'billeteras', 'recurrentes', 'deudas', 'movimientos', 'metas', 'listas_compras', 'lista_items'])
 // El historial se guarda en la copia como registro, pero no se restaura: lo genera la propia base de datos.
 const SOLO_REGISTRO = [['movimientos_historial', 'cambios en el historial']]
 
@@ -42,7 +45,7 @@ export function ultimaCopia() {
 }
 
 export async function crearCopia(usuario) {
-  const datos = await exportarCopia()
+  const datos = await exportarCopia(usuario.id)
   return {
     app: 'fluvi',
     formato: FORMATO,

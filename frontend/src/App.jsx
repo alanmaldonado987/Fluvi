@@ -8,6 +8,8 @@ import Dashboard from '@/pages/Dashboard'
 import Deudas from '@/pages/Deudas'
 import FlujoCaja from '@/pages/FlujoCaja'
 import Importar from '@/pages/Importar'
+import ListaDetalle from '@/pages/ListaDetalle'
+import Listas from '@/pages/Listas'
 import Login from '@/pages/Login'
 import Movimientos from '@/pages/Movimientos'
 import Presupuesto from '@/pages/Presupuesto'
@@ -17,6 +19,7 @@ import { useTemaResuelto } from '@/lib/tema'
 import { useAuth } from '@/store/auth'
 import { AuthProvider } from '@/store/AuthProvider'
 import { FinanceProvider } from '@/store/FinanceProvider'
+import { ListasProvider } from '@/store/ListasProvider'
 
 function Protegido() {
   const { usuario } = useAuth()
@@ -34,6 +37,14 @@ const router = createBrowserRouter([
       { path: 'presupuesto', element: <Presupuesto /> },
       { path: 'billeteras', element: <Billeteras /> },
       { path: 'deudas', element: <Deudas /> },
+      {
+        path: 'listas',
+        element: <ListasProvider />,
+        children: [
+          { index: true, element: <Listas /> },
+          { path: ':id', element: <ListaDetalle /> },
+        ],
+      },
       { path: 'flujo', element: <FlujoCaja /> },
       { path: 'configuracion/:seccion?', element: <Configuracion /> },
       { path: 'importar', element: <Importar /> },
