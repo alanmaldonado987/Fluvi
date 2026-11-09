@@ -1,4 +1,4 @@
-import { LoaderCircle, LogOut, Send, UserMinus } from 'lucide-react'
+import { ChevronDown, LoaderCircle, LogOut, Send, UserMinus } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { Campo } from '@/components/Campo'
@@ -18,9 +18,63 @@ const permisosEtiquetas = [
   ['puedeEliminar', 'eliminar', 'Eliminar ítems'],
 ]
 
+// Los permisos se eligen por rol y, si hace falta, se afinan uno por uno. Cada rol es una combinación de los tres permisos.
+const ROLES = [
+  { id: 'ver', etiqueta: 'Solo ver', permisos: { crear: false, editar: false, eliminar: false }, detalle: 'Puede ver la lista, sin cambiar nada.' },
+  { id: 'colaborar', etiqueta: 'Colaborar', permisos: { crear: true, editar: true, eliminar: false }, detalle: 'Puede agregar ítems, editarlos y marcarlos como comprados. No puede eliminar.' },
+  { id: 'todo', etiqueta: 'Todo', permisos: { crear: true, editar: true, eliminar: true }, detalle: 'Puede agregar, editar y eliminar ítems.' },
+]
+
+const rolDe = (m) => ROLES.find((r) => r.permisos.crear === m.puedeCrear && r.permisos.editar === m.puedeEditar && r.permisos.eliminar === m.puedeEliminar) ?? null
+
+function PermisosDePersona({ m, nombre, onCambiar }) {
+  const rol = rolDe(m)
+  // Una combinación que no es ningún rol (p. ej. agregar y eliminar, pero no editar) abre el detalle para que se vea cuál es.
+  const [abierto, setAbierto] = useState(false)
+  const detalleVisible = abierto || !rol
+  return (
+    <div className="grid gap-2 border-t pt-2">
+      <div role="radiogroup" aria-label={`Permisos de ${nombre}`} className="grid grid-cols-3 overflow-hidden rounded-lg border">
+        {ROLES.map((r) => (
+          <button
+            key={r.id}
+            type="button"
+            role="radio"
+            aria-checked={rol?.id === r.id}
+            onClick={() => onCambiar(r.permisos)}
+            className={cn('border-r px-2 py-2 text-center text-sm last:border-r-0 transition-colors focus-visible:z-10 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring', rol?.id === r.id ? 'bg-mint font-semibold text-forest' : 'text-muted-foreground hover:bg-muted/60')}
+          >
+            {r.etiqueta}
+          </button>
+        ))}
+      </div>
+      <p className="text-xs text-muted-foreground">{rol ? rol.detalle : 'Permisos personalizados.'}</p>
+      <button
+        type="button"
+        aria-expanded={detalleVisible}
+        onClick={() => setAbierto((a) => !a)}
+        disabled={!rol}
+        className="flex w-fit items-center gap-1 rounded-md text-xs font-semibold text-forest underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:no-underline disabled:opacity-60"
+      >
+        Personalizar permisos <ChevronDown className={cn('size-3.5 transition-transform', detalleVisible && 'rotate-180')} aria-hidden="true" />
+      </button>
+      {detalleVisible ? (
+        <div className="grid gap-1.5">
+          {permisosEtiquetas.map(([campo, clave, etiqueta]) => (
+            <label key={clave} className="flex items-center justify-between gap-3 text-sm">
+              <span className="text-muted-foreground">{etiqueta}</span>
+              <Switch checked={m[campo]} aria-label={`${etiqueta}: ${nombre}`} onCheckedChange={(valor) => onCambiar({ crear: m.puedeCrear, editar: m.puedeEditar, eliminar: m.puedeEliminar, [clave]: valor })} />
+            </label>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
 function FilaPersona({ nombre, email, detalle, children }) {
   return (
-    <li className="grid gap-2 rounded-xl border p-3">
+    <li className="grid grid-cols-1 gap-2 rounded-xl border p-3">
       <div className="flex items-center gap-3">
         <span className="grid size-9 shrink-0 place-items-center rounded-full bg-mint text-sm font-bold text-forest" aria-hidden="true">
           {nombreDe(nombre, email).charAt(0).toUpperCase()}
@@ -88,7 +142,7 @@ export function MiembrosDialog({ open, onOpenChange, lista, miembros, soyPropiet
             </form>
           ) : null}
 
-          <ul className="grid max-h-80 gap-2 overflow-y-auto">
+          <ul className="grid max-h-80 grid-cols-1 gap-2 overflow-y-auto">
             <FilaPersona nombre={lista.propietarioNombre} email={lista.propietarioEmail} detalle={<span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">Creador</span>} />
             {miembros.map((m) => (
               <FilaPersona
@@ -106,22 +160,7 @@ export function MiembrosDialog({ open, onOpenChange, lista, miembros, soyPropiet
                   </>
                 }
               >
-                {soyPropietario ? (
-                  <div className="grid gap-1.5 border-t pt-2">
-                    {permisosEtiquetas.map(([campo, clave, etiqueta]) => (
-                      <label key={clave} className={cn('flex items-center justify-between gap-3 text-sm')}>
-                        <span className="text-muted-foreground">{etiqueta}</span>
-                        <Switch
-                          checked={m[campo]}
-                          aria-label={`${etiqueta}: ${nombreDe(m.nombre, m.email)}`}
-                          onCheckedChange={(valor) =>
-                            acciones.cambiarPermisos(lista.id, m.usuarioId, { crear: m.puedeCrear, editar: m.puedeEditar, eliminar: m.puedeEliminar, [clave]: valor })
-                          }
-                        />
-                      </label>
-                    ))}
-                  </div>
-                ) : null}
+                {soyPropietario ? <PermisosDePersona m={m} nombre={nombreDe(m.nombre, m.email)} onCambiar={(permisos) => acciones.cambiarPermisos(lista.id, m.usuarioId, permisos)} /> : null}
               </FilaPersona>
             ))}
           </ul>
