@@ -149,7 +149,7 @@ export function ListasProvider({ children }) {
       recargar,
       // Si se comparte, `correos` son las personas a invitar: se invitan en cuanto la lista queda guardada.
       crearLista: ({ nombre, compartida, correos = [] }) => {
-        const lista = { id: nuevoId(), nombre: nombre.trim(), compartida: Boolean(compartida), propietarioId: yo.id, propietarioNombre: yo.nombre, propietarioEmail: yo.email }
+        const lista = { id: nuevoId(), nombre: nombre.trim(), compartida: Boolean(compartida), propietarioId: yo.id, propietarioNombre: yo.nombre, propietarioEmail: yo.email, propietarioAvatar: usuario.avatar }
         let creada = false
         ejecutar({ type: 'agregarLista', lista }, () => repo.crearLista(lista).then(() => (creada = true)))
         if (lista.compartida) invitarDespues(lista.id, correos, () => creada)
@@ -213,7 +213,7 @@ export function ListasProvider({ children }) {
         await Promise.all([recargar(), refrescarInvitaciones()])
       },
     }
-  }, [usuario.id, usuario.nombre, usuario.email, recargar, programarRelectura])
+  }, [usuario.id, usuario.nombre, usuario.email, usuario.avatar, recargar, programarRelectura])
 
   if (error) {
     return (

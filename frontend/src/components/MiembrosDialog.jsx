@@ -1,6 +1,7 @@
 import { ChevronDown, LoaderCircle, LogOut, Send, UserMinus } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { Avatar } from '@/components/Avatar'
 import { Campo } from '@/components/Campo'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { hojaMovil } from '@/components/hojaMovil'
@@ -72,13 +73,11 @@ function PermisosDePersona({ m, nombre, onCambiar }) {
   )
 }
 
-function FilaPersona({ nombre, email, detalle, children }) {
+function FilaPersona({ nombre, email, avatar, detalle, children }) {
   return (
     <li className="grid grid-cols-1 gap-2 rounded-xl border p-3">
       <div className="flex items-center gap-3">
-        <span className="grid size-9 shrink-0 place-items-center rounded-full bg-mint text-sm font-bold text-forest" aria-hidden="true">
-          {nombreDe(nombre, email).charAt(0).toUpperCase()}
-        </span>
+        <Avatar nombre={nombreDe(nombre, email)} url={avatar} inicial className="size-9 bg-mint text-sm text-forest" />
         <span className="min-w-0 flex-1">
           <span className="block truncate text-sm font-semibold">{nombreDe(nombre, email)}</span>
           <span className="block truncate text-xs text-muted-foreground">{email}</span>
@@ -143,12 +142,13 @@ export function MiembrosDialog({ open, onOpenChange, lista, miembros, soyPropiet
           ) : null}
 
           <ul className="grid max-h-80 grid-cols-1 gap-2 overflow-y-auto">
-            <FilaPersona nombre={lista.propietarioNombre} email={lista.propietarioEmail} detalle={<span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">Creador</span>} />
+            <FilaPersona nombre={lista.propietarioNombre} email={lista.propietarioEmail} avatar={lista.propietarioAvatar} detalle={<span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">Creador</span>} />
             {miembros.map((m) => (
               <FilaPersona
                 key={m.usuarioId}
                 nombre={m.nombre}
                 email={m.email}
+                avatar={m.avatar}
                 detalle={
                   <>
                     {m.estado === 'pendiente' ? <span className="shrink-0 rounded-full bg-gold/25 px-2 py-0.5 text-xs font-semibold text-foreground">Pendiente</span> : null}

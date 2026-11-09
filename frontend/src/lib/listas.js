@@ -10,6 +10,7 @@ export const aLista = (r) => ({
   propietarioId: r.user_id,
   propietarioNombre: r.propietario_nombre,
   propietarioEmail: r.propietario_email,
+  propietarioAvatar: r.propietario_avatar ?? null,
 })
 
 export const aItem = (r) => ({
@@ -42,6 +43,7 @@ export const aMiembro = (r) => ({
   usuarioId: r.usuario_id,
   email: r.email,
   nombre: r.nombre,
+  avatar: r.avatar ?? null,
   estado: r.estado,
   puedeCrear: r.puede_crear,
   puedeEditar: r.puede_editar,

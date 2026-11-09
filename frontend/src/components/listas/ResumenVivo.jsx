@@ -1,4 +1,5 @@
 import { Ellipsis, Pencil, Trash2, UserPlus, Users } from 'lucide-react'
+import { Avatar } from '@/components/Avatar'
 import { Money } from '@/components/Money'
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
@@ -18,13 +19,8 @@ function Participantes({ personas, onAbrir, etiqueta }) {
     <button type="button" onClick={onAbrir} aria-label={etiqueta} className="flex items-center rounded-full py-1 pr-1 pl-2 transition-colors hover:bg-muted/70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--lc-acento)]">
       <span className="flex">
         {visibles.map((p, i) => (
-          <span
-            key={p.id}
-            title={p.nombre}
-            style={{ zIndex: 10 - i }}
-            className={cn('-ml-2 grid size-8 place-items-center rounded-full border-2 border-card text-xs font-bold first:ml-0', colorDe(p.id), p.pendiente && 'border-dashed border-muted-foreground/50 opacity-70')}
-          >
-            {nombreDe(p.nombre, p.email).charAt(0).toUpperCase()}
+          <span key={p.id} title={p.nombre} style={{ zIndex: 10 - i }} className="-ml-2 first:ml-0">
+            <Avatar nombre={nombreDe(p.nombre, p.email)} url={p.avatar} inicial className={cn('size-8 border-2 border-card text-xs', colorDe(p.id), p.pendiente && 'border-dashed border-muted-foreground/50 opacity-70')} />
           </span>
         ))}
         {resto > 0 ? <span className="-ml-2 grid size-8 place-items-center rounded-full border-2 border-card bg-muted text-xs font-semibold text-muted-foreground">+{resto}</span> : null}

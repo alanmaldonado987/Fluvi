@@ -117,8 +117,8 @@ export default function ListaDetalle() {
   const todoPendiente = ordenados.filter((i) => !i.comprado)
   const aceptados = miembros.filter((m) => m.estado === 'aceptada')
   const personas = [
-    { id: lista.propietarioId, nombre: nombreDe(lista.propietarioNombre, lista.propietarioEmail), email: lista.propietarioEmail },
-    ...miembros.map((m) => ({ id: m.usuarioId, nombre: nombreDe(m.nombre, m.email), email: m.email, pendiente: m.estado === 'pendiente' })),
+    { id: lista.propietarioId, nombre: nombreDe(lista.propietarioNombre, lista.propietarioEmail), email: lista.propietarioEmail, avatar: lista.propietarioAvatar },
+    ...miembros.map((m) => ({ id: m.usuarioId, nombre: nombreDe(m.nombre, m.email), email: m.email, avatar: m.avatar, pendiente: m.estado === 'pendiente' })),
   ]
   const detalle = permisos.propietario ? (lista.compartida ? `Tuya · compartida con ${aceptados.length} ${aceptados.length === 1 ? 'persona' : 'personas'}` : 'Solo tuya') : `De ${nombreDe(lista.propietarioNombre, lista.propietarioEmail)}`
   const arrastrable = puedeOrdenar && !q
