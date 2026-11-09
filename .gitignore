@@ -9,3 +9,6 @@ Thumbs.db
 *.xlsm
 *.xlsx
 *.xls
+
+# Carpeta temporal de la CLI de Supabase
+supabase/.temp/
