@@ -15,6 +15,7 @@ const pasos = [
   { ruta: '/movimientos', objetivo: 'importar', titulo: 'Importar Excel', texto: '¿Vienes del Excel? Cárgalo una sola vez y se crean tus categorías, billeteras, presupuestos y movimientos.' },
   { ruta: '/deudas', objetivo: 'deudas', alterno: 'mas', titulo: 'Deudas', texto: 'Registra los préstamos que haces y cobra cuando te paguen. Si la deuda es grande, puedes registrar abonos parciales hasta completar el pago.' },
   { ruta: '/flujo', objetivo: 'flujo', alterno: 'mas', titulo: 'Flujo', texto: 'Compara lo que planeaste con lo que realmente pasó, categoría por categoría y mes a mes.' },
+  { ruta: '/listas', objetivo: 'listas', alterno: 'mas', titulo: 'Listas de compras', texto: 'Arma listas de lo que quieres comprar, con su precio y una fecha opcional, y márcalas cuando ya las tengas. Puedes compartirlas con otros usuarios de Fluvi. No afectan tus saldos.' },
   { objetivo: 'privado', titulo: 'Modo privado', texto: 'Oculta todas las cifras con un toque, útil cuando revisas tus finanzas en público.' },
   { objetivo: 'usuario', titulo: 'Tu cuenta', texto: 'Desde tu menú entras a Configuración: perfil, qué avisos recibir en la campana, tema oscuro, copia de seguridad y cierre de sesión.' },
   { ruta: '/', titulo: 'Eso es todo', texto: 'Empieza creando tus categorías en Presupuesto, o importa tu Excel y tendrás todo listo en un minuto.', final: true },

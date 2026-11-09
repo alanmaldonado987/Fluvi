@@ -61,7 +61,7 @@ export default function Listas() {
 
   return (
     <div className="grid gap-5">
-      <PageHeader title="Listas" description="Arma listas de lo que quieres comprar, con sus precios. No afectan tus saldos.">
+      <PageHeader title="Listas de compras" description="Arma listas de lo que quieres comprar, con sus precios. No afectan tus saldos.">
         <Button onClick={() => setCreando(true)}>
           <Plus /> Nueva lista
         </Button>

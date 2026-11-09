@@ -22,7 +22,7 @@ const rutas = [
   { to: '/billeteras', label: 'Billeteras', icon: Wallet, tour: 'billeteras' },
   { to: '/deudas', label: 'Deudas', icon: HandCoins, tour: 'deudas', secundaria: true },
   { to: '/flujo', label: 'Flujo', icon: Waves, tour: 'flujo', secundaria: true },
-  { to: '/listas', label: 'Listas', icon: ListChecks, tour: 'listas', secundaria: true },
+  { to: '/listas', label: 'Listas de compras', corta: 'Listas', icon: ListChecks, tour: 'listas', secundaria: true },
 ]
 
 const rutasMovil = rutas.filter((r) => !r.secundaria)
@@ -53,11 +53,11 @@ function MasMovil({ pathname, invitaciones }) {
         {activa ? null : <Insignia cantidad={invitaciones} punto className="top-1.5 right-0.5" />}
         <span className={cn('grid transition-[grid-template-columns] duration-300 ease-out', activa ? 'grid-cols-[1fr]' : 'grid-cols-[0fr]')}>
           <span className="min-w-0 overflow-hidden whitespace-nowrap">
-            <span className="block pl-1.5">{activa?.label ?? 'Más'}</span>
+            <span className="block pl-1.5">{activa ? (activa.corta ?? activa.label) : 'Más'}</span>
           </span>
         </span>
       </PopoverTrigger>
-      <PopoverContent side="top" align="end" sideOffset={12} className="w-48 p-1.5">
+      <PopoverContent side="top" align="end" sideOffset={12} className="w-56 p-1.5">
         <ul className="grid gap-0.5">
           {rutasMas.map(({ to, label, icon: Icon }) => (
             <li key={to}>
