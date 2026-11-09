@@ -1,6 +1,6 @@
 import { Check, Flag } from 'lucide-react'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import { estiloPrioridad } from '@/lib/estiloPrioridad'
+import { bordePrioridad, colorPrioridad, estiloPrioridad } from '@/lib/estiloPrioridad'
 import { PRIORIDADES } from '@/lib/listas'
 import { cn } from '@/lib/utils'
 
@@ -28,7 +28,7 @@ export function FichaPrioridad({ item, puedeEditar, onCambiar }) {
       <DropdownMenuContent align="start">
         {PRIORIDADES.map((p) => (
           <DropdownMenuItem key={p.id} onClick={() => onCambiar({ prioridad: p.id })}>
-            <Flag className={cn('size-4', estiloPrioridad[p.id].split(' ')[1])} /> {p.etiqueta} {actual === p.id ? <Check className="ml-auto size-4" /> : null}
+            <Flag className={cn('size-4', colorPrioridad[p.id])} /> {p.etiqueta} {actual === p.id ? <Check className="ml-auto size-4" /> : null}
           </DropdownMenuItem>
         ))}
         {actual ? <DropdownMenuItem onClick={() => onCambiar({ prioridad: null })}>Sin prioridad</DropdownMenuItem> : null}
@@ -50,11 +50,11 @@ export function SelectorPrioridad({ valor, onCambiar, className }) {
             aria-pressed={activa}
             onClick={() => onCambiar(activa ? null : p.id)}
             className={cn(
-              'inline-flex h-8 items-center gap-1 rounded-full border px-3 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--lc-acento)]',
-              activa ? cn(estiloPrioridad[p.id], 'border-transparent') : 'text-muted-foreground hover:bg-muted',
+              'inline-flex h-9 items-center gap-1.5 rounded-full border px-3.5 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--lc-acento)]',
+              activa ? cn(estiloPrioridad[p.id], 'border-transparent ring-2 ring-current/30') : cn(colorPrioridad[p.id], bordePrioridad[p.id]),
             )}
           >
-            <Flag className="size-3" aria-hidden="true" /> {p.etiqueta}
+            <Flag className="size-3.5" aria-hidden="true" /> {p.etiqueta}
           </button>
         )
       })}

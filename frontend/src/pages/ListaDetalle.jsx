@@ -1,6 +1,6 @@
 import { closestCenter, DndContext, KeyboardSensor, PointerSensor, useDroppable, useSensor, useSensors } from '@dnd-kit/core'
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable'
-import { ArrowDownUp, ArrowLeft, ChevronDown, ListPlus, PackageCheck, Search, Sparkles } from 'lucide-react'
+import { ArrowDownAZ, ArrowDownNarrowWide, ArrowDownUp, ArrowLeft, ArrowUpWideNarrow, CalendarClock, ChevronDown, Flag, ListPlus, PackageCheck, Search, Sparkles } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -29,11 +29,11 @@ const MIN_ITEMS_BUSQUEDA = 7
 const nombreDe = (nombre, email) => nombre || (email ?? '').split('@')[0]
 
 const criterios = [
-  { id: 'fecha', etiqueta: 'Fecha más cercana', comparar: (a, b) => (a.fechaCompra ?? '9999-12-31').localeCompare(b.fechaCompra ?? '9999-12-31') },
-  { id: 'prioridad', etiqueta: 'Prioridad, la más alta primero', conPrioridad: true, comparar: (a, b) => pesoPrioridad(a.prioridad) - pesoPrioridad(b.prioridad) },
-  { id: 'precio-asc', etiqueta: 'Precio, de menor a mayor', comparar: (a, b) => a.precio - b.precio },
-  { id: 'precio-desc', etiqueta: 'Precio, de mayor a menor', comparar: (a, b) => b.precio - a.precio },
-  { id: 'nombre', etiqueta: 'Nombre, de la A a la Z', comparar: (a, b) => a.nombre.localeCompare(b.nombre, 'es') },
+  { id: 'fecha', icono: CalendarClock, etiqueta: 'Fecha más cercana', comparar: (a, b) => (a.fechaCompra ?? '9999-12-31').localeCompare(b.fechaCompra ?? '9999-12-31') },
+  { id: 'prioridad', icono: Flag, etiqueta: 'Prioridad, la más alta primero', conPrioridad: true, comparar: (a, b) => pesoPrioridad(a.prioridad) - pesoPrioridad(b.prioridad) },
+  { id: 'precio-asc', icono: ArrowDownNarrowWide, etiqueta: 'Precio, de menor a mayor', comparar: (a, b) => a.precio - b.precio },
+  { id: 'precio-desc', icono: ArrowUpWideNarrow, etiqueta: 'Precio, de mayor a menor', comparar: (a, b) => b.precio - a.precio },
+  { id: 'nombre', icono: ArrowDownAZ, etiqueta: 'Nombre, de la A a la Z', comparar: (a, b) => a.nombre.localeCompare(b.nombre, 'es') },
 ]
 
 // Mientras se arrastra aparece esta zona: soltar un ítem aquí lo marca como comprado.
@@ -258,9 +258,11 @@ export default function ListaDetalle() {
                       <DropdownMenuTrigger render={<Button variant="ghost" size="sm" aria-label="Ordenar los ítems por comprar" />}>
                         <ArrowDownUp /> <span className="hidden sm:inline">Ordenar</span>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
+                      <DropdownMenuContent align="end" className="w-auto min-w-64 p-2">
+                        <p className="px-2.5 pt-1 pb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">Ordenar por</p>
                         {criterios.filter((c) => conPrioridad || !c.conPrioridad).map((c) => (
-                          <DropdownMenuItem key={c.id} onClick={() => ordenarPor(c)}>
+                          <DropdownMenuItem key={c.id} onClick={() => ordenarPor(c)} className="gap-3 rounded-lg px-2.5 py-2.5 text-sm whitespace-nowrap">
+                            <c.icono className="size-4 text-[var(--lc-acento-texto)]" aria-hidden="true" />
                             {c.etiqueta}
                           </DropdownMenuItem>
                         ))}

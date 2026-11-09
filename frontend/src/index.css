@@ -241,7 +241,8 @@
 }
 .lc-pop { animation: lc-pop 380ms var(--ease-out) both; }
 .lc-trazo { stroke-dasharray: 26; animation: lc-trazo 320ms 60ms var(--ease-out) both; }
-.lc-entra { animation: lc-entra 360ms var(--ease-out) both; }
+/* Solo "backwards": con "both" el estado final (transform: none) taparía el transform que dnd-kit pone al arrastrar. */
+.lc-entra { animation: lc-entra 360ms var(--ease-out) backwards; }
 .lc-confeti { animation: lc-confeti 1300ms var(--ease-out) both; }
 @media (prefers-reduced-motion: reduce) {
   .lc-confeti { display: none; }

@@ -81,6 +81,14 @@ export function FilaItem({ item, indice = 0, permisos, fechaHoy, conPrioridad, m
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id, disabled: !arrastrable, transition: transicionSuave })
   const gesto = useDeslizar({ alDerecha: permisos.editar ? () => onMarcar(item.id, !marcado) : undefined, alIzquierda: permisos.eliminar ? () => onEliminar(item) : undefined })
 
+  const tieneFichas = Boolean(item.fechaCompra) || Boolean(conPrioridad && item.prioridad)
+  const fichas = (
+    <>
+      {conPrioridad ? <FichaPrioridad item={item} puedeEditar={permisos.editar} onCambiar={(datos) => onCambiar(item.id, datos)} /> : null}
+      <FichaFecha item={{ ...item, comprado: marcado }} fechaHoy={fechaHoy} puedeEditar={permisos.editar} onCambiar={(datos) => onCambiar(item.id, datos)} />
+    </>
+  )
+
   return (
     <li ref={setNodeRef} style={{ transform: CSS.Translate.toString(transform), transition, animationDelay: `${Math.min(indice, 8) * 35}ms` }} className={cn('lc-entra relative', isDragging && 'z-30')}>
       <div className={cn('relative overflow-hidden rounded-2xl', isDragging && 'shadow-elevated ring-2 ring-[var(--lc-acento)]')}>
@@ -112,23 +120,26 @@ export function FilaItem({ item, indice = 0, permisos, fechaHoy, conPrioridad, m
           <Marcador marcado={marcado} animar={animar} deshabilitado={!permisos.editar} nombre={item.nombre} onAlternar={() => onMarcar(item.id, !marcado)} />
 
           <div className="min-w-0 flex-1 px-1">
-            <CampoEditable
-              valor={item.nombre}
-              etiqueta={`Nombre de ${item.nombre}`}
-              deshabilitado={!permisos.editar}
-              onGuardar={(nombre) => onCambiar(item.id, { nombre })}
-              className="block w-full px-1 py-0.5"
-              mostrar={
-                <span className="relative inline-block max-w-full">
-                  <span className={cn('block truncate text-[15px] font-medium transition-colors duration-300', marcado && 'text-muted-foreground')}>{item.nombre}</span>
-                  <span aria-hidden="true" className={cn('pointer-events-none absolute top-1/2 left-0 h-0.5 origin-left rounded-full bg-muted-foreground/70 transition-transform duration-300 ease-out', marcado ? 'w-full scale-x-100' : 'w-full scale-x-0')} />
-                </span>
-              }
-            />
-            <div className="flex flex-wrap items-center gap-1 px-1 pt-0.5">
-              {conPrioridad ? <FichaPrioridad item={item} puedeEditar={permisos.editar} onCambiar={(datos) => onCambiar(item.id, datos)} /> : null}
-              <FichaFecha item={{ ...item, comprado: marcado }} fechaHoy={fechaHoy} puedeEditar={permisos.editar} onCambiar={(datos) => onCambiar(item.id, datos)} />
+            <div className="flex items-center gap-2">
+              <CampoEditable
+                valor={item.nombre}
+                etiqueta={`Nombre de ${item.nombre}`}
+                deshabilitado={!permisos.editar}
+                onGuardar={(nombre) => onCambiar(item.id, { nombre })}
+                className="block min-w-0 px-1 py-1"
+                mostrar={
+                  <span className="relative inline-block max-w-full">
+                    <span className={cn('block truncate text-[15px] font-medium transition-colors duration-300', marcado && 'text-[var(--lc-ok-texto)]')}>{item.nombre}</span>
+                    <span aria-hidden="true" className={cn('pointer-events-none absolute top-1/2 left-0 h-0.5 origin-left rounded-full bg-[var(--lc-ok)]/70 transition-transform duration-300 ease-out', marcado ? 'w-full scale-x-100' : 'w-full scale-x-0')} />
+                  </span>
+                }
+              />
+              {/* Sin prioridad ni fecha, las fichas para agregarlas aparecen al lado del nombre (solo escritorio) y no ocupan una línea. */}
+              {!tieneFichas && permisos.editar ? (
+                <span className="hidden shrink-0 items-center gap-1 md:flex">{fichas}</span>
+              ) : null}
             </div>
+            {tieneFichas ? <div className="flex flex-wrap items-center gap-1.5 px-1 pb-1">{fichas}</div> : null}
           </div>
 
           <CampoEditable
