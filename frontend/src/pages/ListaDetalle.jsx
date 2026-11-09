@@ -176,6 +176,7 @@ export default function ListaDetalle() {
         onOpenChange={setEditandoLista}
         lista={lista}
         participantes={miembros.length}
+        miCorreo={usuario.email}
         onGuardar={(datos) => actions.editarLista(lista.id, datos)}
       />
       <ItemDialog open={itemEnEdicion !== null} onOpenChange={(abierto) => !abierto && setItemEnEdicion(null)} item={itemEnEdicion} onGuardar={(datos) => actions.editarItem(itemEnEdicion.id, datos)} />

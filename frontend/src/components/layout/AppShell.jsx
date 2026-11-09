@@ -171,7 +171,8 @@ export function AppShell() {
       </header>
 
       <main className="mx-auto w-full min-w-0 max-w-[1800px] px-4 pt-3 pb-28 md:px-6 md:py-6 xl:px-10">
-        <div key={pathname} className={entradaPagina}>
+        {/* La animación de entrada se repite al cambiar de sección, no al moverse dentro de una (/listas a /listas/:id): así un proveedor de datos de la sección no se desmonta ni pierde su estado al navegar. */}
+        <div key={pathname.split('/')[1]} className={entradaPagina}>
           <Outlet />
         </div>
       </main>

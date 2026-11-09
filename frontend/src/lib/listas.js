@@ -75,5 +75,8 @@ export function resumenItems(items) {
   return { total, comprado, pendiente: total - comprado, cantidad: items.length, cuantosComprados }
 }
 
+// Revisión sencilla de un correo antes de invitar (la existencia de la cuenta la confirma el servidor al invitar).
+export const esCorreoValido = (texto) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(texto ?? '').trim())
+
 // Un ítem con fecha, sin comprar, cuya fecha ya pasó.
 export const estaVencido = (item, fechaHoy) => Boolean(item.fechaCompra) && !item.comprado && item.fechaCompra < fechaHoy

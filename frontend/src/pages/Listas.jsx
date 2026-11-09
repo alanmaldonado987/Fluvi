@@ -121,7 +121,7 @@ export default function Listas() {
         </EmptyState>
       )}
 
-      <ListaDialog open={creando} onOpenChange={setCreando} onGuardar={(datos) => navigate(`/listas/${actions.crearLista(datos)}`)} />
+      <ListaDialog open={creando} onOpenChange={setCreando} miCorreo={usuario.email} onGuardar={(datos) => navigate(`/listas/${actions.crearLista(datos)}`)} />
     </div>
   )
 }

@@ -11,22 +11,46 @@ import { ListasContext } from './listasContext'
 import { estadoInicialListas, listasReducer } from './listasReducer'
 
 const CADA_MS = 20 * 1000
+// Con el websocket conectado basta una relectura lenta de seguridad: un canal puede quedar conectado sin recibir avisos.
+const CADA_MS_SEGURIDAD = 60 * 1000
 
 // Estado del módulo de listas. Se monta solo en las pantallas de listas, así el resto de la app no carga nada de esto.
-// Los cambios se ven al instante y se guardan en segundo plano; si el guardado falla se vuelve a cargar lo que hay en el
-// servidor. Si alguna lista es compartida, se vuelve a leer cada pocos segundos para ver lo que cambian los demás.
+// Los cambios se ven al instante y se guardan en segundo plano, de uno en uno y en el orden en que se hicieron (así crear una
+// lista y borrarla enseguida no se cruzan). Tras cada guardado se confirma con una lectura del servidor, y una lectura que
+// empezó antes de un cambio propio se descarta por vieja, para que la pantalla nunca vuelva a mostrar algo ya borrado.
+// Además se escuchan los cambios de otras personas por websocket, con una relectura periódica de respaldo.
 export function ListasProvider({ children }) {
   const { usuario } = useAuth()
   const [state, dispatch] = useReducer(listasReducer, estadoInicialListas)
   const [error, setError] = useState(null)
   const estadoRef = useRef(estadoInicialListas)
   const enVuelo = useRef(0)
+  const version = useRef(0)
+  const cola = useRef(Promise.resolve())
+  const espera = useRef(null)
 
   useEffect(() => {
     estadoRef.current = state
   }, [state])
 
-  const recargar = useCallback(() => repo.cargarListas().then((datos) => dispatch({ type: 'cargar', datos })), [])
+  const recargar = useCallback(() => {
+    const inicio = version.current
+    return repo.cargarListas().then((datos) => {
+      // Si hubo cambios propios mientras se leía, esa lectura puede estar vieja: se descarta y la relectura que sigue a cada
+      // guardado la reemplaza.
+      if (version.current === inicio) dispatch({ type: 'cargar', datos })
+    })
+  }, [])
+
+  // Vuelve a leer en un momento: agrupa varios avisos seguidos y espera a que terminen los guardados propios.
+  const programarRelectura = useCallback(() => {
+    clearTimeout(espera.current)
+    const intentar = () => {
+      if (enVuelo.current > 0) espera.current = setTimeout(intentar, 400)
+      else recargar().catch(() => {})
+    }
+    espera.current = setTimeout(intentar, 300)
+  }, [recargar])
 
   useEffect(() => {
     let vigente = true
@@ -43,36 +67,26 @@ export function ListasProvider({ children }) {
     }
   }, [recargar])
 
-  // Tiempo real: Supabase avisa por websocket cuando algo cambia y la app vuelve a leer. Se espera un instante para agrupar
-  // varios avisos seguidos y no se relee mientras haya cambios propios sin guardar (para no pisarlos).
+  // Tiempo real: Supabase avisa por websocket cuando algo cambia y la app vuelve a leer.
   const [conectado, setConectado] = useState(false)
   useEffect(() => {
     if (!state.cargado) return undefined
-    let espera = null
-    const intentar = () => {
-      if (enVuelo.current > 0) espera = setTimeout(intentar, 400)
-      else recargar().catch(() => {})
-    }
-    const alCambiar = () => {
-      clearTimeout(espera)
-      espera = setTimeout(intentar, 300)
-    }
-    const darseDeBaja = repo.suscribirCambios(alCambiar, setConectado)
+    const darseDeBaja = repo.suscribirCambios(programarRelectura, setConectado)
     return () => {
-      clearTimeout(espera)
+      clearTimeout(espera.current)
       darseDeBaja()
       setConectado(false)
     }
-  }, [state.cargado, recargar])
+  }, [state.cargado, programarRelectura])
 
-  // Respaldo: si el websocket no está conectado y hay listas compartidas, se relee cada pocos segundos.
+  // Respaldo: con listas compartidas se relee cada cierto tiempo (cada pocos segundos si el websocket no está conectado).
   const hayCompartidas = state.listas.some((l) => l.compartida)
   useEffect(() => {
-    if (!state.cargado || !hayCompartidas || conectado) return undefined
+    if (!state.cargado || !hayCompartidas) return undefined
     const releer = () => {
       if (document.visibilityState === 'visible' && enVuelo.current === 0) recargar().catch(() => {})
     }
-    const id = setInterval(releer, CADA_MS)
+    const id = setInterval(releer, conectado ? CADA_MS_SEGURIDAD : CADA_MS)
     document.addEventListener('visibilitychange', releer)
     return () => {
       clearInterval(id)
@@ -83,39 +97,76 @@ export function ListasProvider({ children }) {
   const actions = useMemo(() => {
     const yo = { id: usuario.id, nombre: usuario.nombre, email: usuario.email }
     const alFallar = () => {
+      version.current++
       terminarGuardado(false)
       enVuelo.current--
       toast.error('No se pudo guardar el cambio. Se restauraron los datos.')
       recargar().catch(() => {})
     }
-    // Aplica el cambio en pantalla y lo guarda; el indicador de guardado de la app cuenta cada guardado.
+    // Aplica el cambio en pantalla y lo guarda; el indicador de guardado de la app cuenta cada guardado. Los guardados salen en
+    // fila, en orden: así un borrado nunca llega al servidor antes que la creación que lo precede.
     const ejecutar = (acciones, peticion) => {
       ;[].concat(acciones).forEach(dispatch)
       comenzarGuardado()
       enVuelo.current++
-      peticion().then(() => {
-        terminarGuardado(true)
-        enVuelo.current--
-      }, alFallar)
+      version.current++
+      cola.current = cola.current
+        .then(() => peticion())
+        .then(() => {
+          version.current++
+          terminarGuardado(true)
+          enVuelo.current--
+          programarRelectura()
+        }, alFallar)
     }
     const nuevoId = () => crypto.randomUUID()
 
+    // Invita a varias personas justo después de que la lista quede guardada. Va en la misma fila de guardados, así la lista
+    // ya existe en el servidor cuando llegan las invitaciones. `listoPara()` dice si el paso anterior salió bien.
+    const invitarDespues = (listaId, correos, listoPara) => {
+      if (!correos?.length) return
+      cola.current = cola.current.then(async () => {
+        if (!listoPara()) return
+        const fallidos = []
+        for (const email of correos) {
+          try {
+            await repo.invitar(listaId, email)
+          } catch (err) {
+            fallidos.push({ email, mensaje: err?.message || 'No se pudo invitar' })
+          }
+        }
+        const enviadas = correos.length - fallidos.length
+        if (enviadas > 0) {
+          const porCorreo = await repo.enviarCorreoInvitacion(listaId)
+          toast.success(`${enviadas === 1 ? 'Invitación enviada' : `${enviadas} invitaciones enviadas`}. ${porCorreo ? 'También avisamos por correo.' : 'Las verán al abrir Fluvi.'}`)
+        }
+        for (const f of fallidos) toast.error(`${f.email}: ${f.mensaje}`)
+        programarRelectura()
+      })
+    }
+
     return {
       recargar,
-      crearLista: ({ nombre, compartida }) => {
+      // Si se comparte, `correos` son las personas a invitar: se invitan en cuanto la lista queda guardada.
+      crearLista: ({ nombre, compartida, correos = [] }) => {
         const lista = { id: nuevoId(), nombre: nombre.trim(), compartida: Boolean(compartida), propietarioId: yo.id, propietarioNombre: yo.nombre, propietarioEmail: yo.email }
-        ejecutar({ type: 'agregarLista', lista }, () => repo.crearLista(lista))
+        let creada = false
+        ejecutar({ type: 'agregarLista', lista }, () => repo.crearLista(lista).then(() => (creada = true)))
+        if (lista.compartida) invitarDespues(lista.id, correos, () => creada)
         return lista.id
       },
       // Dejar de compartir también saca a todos los participantes.
-      editarLista: (id, { nombre, compartida }) => {
+      editarLista: (id, { nombre, compartida, correos = [] }) => {
         const actual = estadoRef.current.listas.find((l) => l.id === id)
         if (!actual) return
         const datos = { nombre: nombre.trim(), compartida: Boolean(compartida) }
         const acciones = [{ type: 'editarLista', id, datos }]
         const dejaDeCompartir = actual.compartida && !datos.compartida
+        const empiezaACompartir = !actual.compartida && datos.compartida
         if (dejaDeCompartir) acciones.push({ type: 'quitarMiembros', listaId: id })
-        ejecutar(acciones, () => repo.actualizarLista(id, datos).then(() => (dejaDeCompartir ? repo.quitarMiembros(id) : undefined)))
+        let guardada = false
+        ejecutar(acciones, () => repo.actualizarLista(id, datos).then(() => (dejaDeCompartir ? repo.quitarMiembros(id) : undefined)).then(() => (guardada = true)))
+        if (empiezaACompartir) invitarDespues(id, correos, () => guardada)
       },
       eliminarLista: (id) => ejecutar({ type: 'quitarLista', id }, () => repo.eliminarLista(id)),
       agregarItem: (listaId, { nombre, precio, fechaCompra }) => {
@@ -153,7 +204,7 @@ export function ListasProvider({ children }) {
         await Promise.all([recargar(), refrescarInvitaciones()])
       },
     }
-  }, [usuario.id, usuario.nombre, usuario.email, recargar])
+  }, [usuario.id, usuario.nombre, usuario.email, recargar, programarRelectura])
 
   if (error) {
     return (
